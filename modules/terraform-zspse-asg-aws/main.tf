@@ -77,7 +77,7 @@ resource "aws_launch_template" "pse_launch_template" {
   ebs_optimized = true
 
   block_device_mappings {
-    device_name = "/dev/sda1"
+    device_name = "/dev/xvda"
 
     ebs {
       delete_on_termination = true
