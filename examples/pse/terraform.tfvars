@@ -2,20 +2,20 @@
 ## Uncomment and change the below variables according to your specific environment
 
 #####################################################################################################################
-##### Variables 5-13 are populated automatically if terraform is ran via ZSPSE bash script.  ##### 
-##### Modifying the variables in this file will override any inputs from ZSPSE             #####
+##### Variables 5-14 are populated automatically if terraform is ran via ZSPSE bash script.  ##### 
+##### Modifying the variables in this file will override any inputs from ZSPSE               #####
 #####################################################################################################################
 
 #####################################################################################################################
 ##### Optional: ZPA Provider Resources. Skip to step 3. if you already have an  #####
-##### Service Edge Group + Provisioning Key.                                   #####
+##### Service Edge Group + Provisioning Key.                                    #####
 #####################################################################################################################
 
 ## 1. ZPA Service Edge Provisioning Key variables. Uncomment and replace values as desired for your deployment.
 ##    For any questions populating the below values, please reference: 
 ##    https://registry.terraform.io/providers/zscaler/zpa/latest/docs/resources/zpa_provisioning_key
 
-#enrollment_cert                                = "Connector"
+#enrollment_cert                                = "Service Edge"
 #provisioning_key_name                          = "new_key_name"
 #provisioning_key_enabled                       = true
 #provisioning_key_max_usage                     = 50
@@ -24,18 +24,19 @@
 ##    For any questions populating the below values, please reference: 
 ##    https://registry.terraform.io/providers/zscaler/zpa/latest/docs/resources/zpa_service_edge_group
 
-#pse__group_name                                = "new_group_name"
-#pse__group_description                         = "group_description"
-#pse__group_enabled                             = true
-#pse__group_country_code                        = "US"
-#pse__group_latitude                            = "37.3382082"
-#pse__group_longitude                           = "-121.8863286"
-#pse__group_location                            = "San Jose, CA, USA"
-#pse__group_upgrade_day                         = "SUNDAY"
-#pse__group_upgrade_time_in_secs                = "66600"
-#pse__group_override_version_profile            = true
-#pse__group_version_profile_id                  = "2"
-#pse__group_dns_query_type                      = "IPV4_IPV6"
+#pse_group_name                     = "new_group_name"
+#pse_group_description              = "group_description"
+#pse_group_enabled                  = true
+#pse_group_country_code             = "US"
+#pse_group_latitude                 = "37.3382082"
+#pse_group_longitude                = "-121.8863286"
+#pse_group_location                 = "San Jose, CA, USA"
+#pse_group_upgrade_day              = "SUNDAY"
+#pse_group_upgrade_time_in_secs     = "66600"
+#pse_group_override_version_profile = true
+#pse_group_version_profile_id       = "2"
+#pse_is_public                      = "FALSE"
+#zpa_trusted_network_name           = "Corporate-Network (zscalertwo.net)"   ### this variable is optional. leave commented out if not used  
 
 
 #####################################################################################################################
@@ -44,7 +45,7 @@
 #####################################################################################################################
 
 ## 3. By default, this script will create a new Service Edge Group Provisioning Key.
-##     Unccoment if you want to use an existing provisioning key (true or false. Default: false)
+##     Uncomment if you want to use an existing provisioning key (true or false. Default: false)
 
 #byo_provisioning_key                           = true
 
@@ -57,7 +58,7 @@
 ##### Custom variables. Only change if required for your environment  #####
 #####################################################################################################################
 
-## 5. AWS region where Service Edge resources will be deployed. This environment variable is automatically populated if running ZSEC script
+## 5. AWS region where Service Edge resources will be deployed. This environment variable is automatically populated if running ZSPSE script
 ##    and thus will override any value set here. Only uncomment and set this value if you are deploying terraform standalone. (Default: us-west-2)
 
 #aws_region                                     = "us-west-2"
@@ -83,7 +84,7 @@
 ## 9. The number of Service Edge appliances to provision. Each incremental Service Edge will be created in alternating 
 ##    subnets based on the az_count or byo_subnet_ids variable and loop through for any deployments where pse_count > az_count.
 ##    (Default: varies per deployment type template)
-##    E.g. pse_count set to 4 and az_count set to 2 or byo_subnet_ids configured for 2 will create 2x ACs in AZ subnet 1 and 2x ACs in AZ subnet 2
+##    E.g. pse_count set to 4 and az_count set to 2 or byo_subnet_ids configured for 2 will create 2x PSEs in AZ subnet 1 and 2x PSEs in AZ subnet 2
 
 #pse_count                                       = 2
 
@@ -137,7 +138,7 @@
 
 #####################################################################################################################
 ##### Custom BYO variables. Only applicable for deployments without "base" resource requirements  #####
-#####                                 E.g. "ac"                                                   #####
+#####                                 E.g. "pse"                                                  #####
 #####################################################################################################################
 
 ## 15. By default, this script will create a new AWS VPC.
@@ -162,7 +163,7 @@
 ##     Route Tables, etc. Provide only one subnet per Availability Zone in a VPC
 ##
 ##     ##### This script will create Route Tables with default 0.0.0.0/0 next-hop to the corresponding NAT Gateways
-##     ##### that are created or exists in the VPC Public Subnets. If you already have AC Subnets created, disassociate
+##     ##### that are created or exists in the VPC Public Subnets. If you already have PSE Subnets created, disassociate
 ##     ##### any route tables to them prior to deploying this script.
 ##
 ##     Example: byo_subnet_ids = ["subnet-05c32f4aa6bc02f8f","subnet-13b35f23y6uc36f3s"]
@@ -191,21 +192,21 @@
 #byo_ngw                                        = true
 
 ## 22. Provide your existing NAT Gateway IDs. Only uncomment and modify if you set byo_subnets to true
-##     NAT Gateway IDs must be added as a list with order determining assocations for the AC Route Tables (pse-rt)
+##     NAT Gateway IDs must be added as a list with order determining assocations for the PSE Route Tables (pse-rt)
 ##     nat_gateway_id next hop
 ##
 ##     ***** Note 1 *****
 ##     This script will create Route Tables with default 0.0.0.0/0 next-hop to the corresponding NAT Gateways
-##     whether they are created or already exist in the VPC Public Subnets. If you already have AC Subnets created, do not associate
+##     whether they are created or already exist in the VPC Public Subnets. If you already have PSE Subnets created, do not associate
 ##     any route tables to them.
 ##
 ##     ***** Note 2 *****
 ##     AC Route Tables will loop through all available NAT Gateways whether created via az_count variable or defined
 ##     below with existing IDs. If bringing your own NAT Gateways with multiple subnets with a desire to maintain zonal
-##     affinity ensure you enter the list of NAT GW IDs in order of 1. if creating AC subnets az_count will 
+##     affinity ensure you enter the list of NAT GW IDs in order of 1. if creating pSE subnets az_count will 
 ##     go in order az1, az2, etc. 2. if byo_subnet_ids, map this list NAT Gateway ID-1 to Subnet ID-1, etc.
 ##     
-##     Example: byo_natgw_ids = ["nat-0e1351f3e8025a30e","nat-0e98fc3d8e09ed0e9"]
+##     Example: byo_ngw_ids = ["nat-0e1351f3e8025a30e","nat-0e98fc3d8e09ed0e9"]
 
 #byo_ngw_ids                                    = ["nat-id"]
 

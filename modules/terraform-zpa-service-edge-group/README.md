@@ -25,7 +25,7 @@ No modules.
 | Name | Type |
 |------|------|
 | [zpa_service_edge_group.service_edge_group](https://registry.terraform.io/providers/zscaler/zpa/latest/docs/resources/service_edge_group) | resource |
-| [zpa_trusted_network.example](https://registry.terraform.io/providers/zscaler/zpa/latest/docs/data-sources/trusted_network) | data source |
+| [zpa_trusted_network.zpa_trusted_network](https://registry.terraform.io/providers/zscaler/zpa/latest/docs/data-sources/trusted_network) | data source |
 
 ## Inputs
 
@@ -42,7 +42,7 @@ No modules.
 | <a name="input_pse_group_upgrade_day"></a> [pse\_group\_upgrade\_day](#input\_pse\_group\_upgrade\_day) | Optional: Private Service Edges in this group will attempt to update to a newer version of the software during this specified day. Default value: SUNDAY. List of valid days (i.e., SUNDAY, MONDAY, etc) | `string` | `"SUNDAY"` | no |
 | <a name="input_pse_group_upgrade_time_in_secs"></a> [pse\_group\_upgrade\_time\_in\_secs](#input\_pse\_group\_upgrade\_time\_in\_secs) | Optional: Private Service Edges in this group will attempt to update to a newer version of the software during this specified time. Default value: 66600. Integer in seconds (i.e., 66600). The integer should be greater than or equal to 0 and less than 86400, in 15 minute intervals | `string` | `"66600"` | no |
 | <a name="input_pse_group_version_profile_id"></a> [pse\_group\_version\_profile\_id](#input\_pse\_group\_version\_profile\_id) | Optional: ID of the version profile. To learn more, see Version Profile Use Cases. https://help.zscaler.com/zpa/configuring-version-profile | `string` | `"2"` | no |
-| <a name="input_pse_is_public"></a> [pse\_is\_public](#input\_pse\_is\_public) | (Optional) Enable or disable public access for the Service Edge Group. Default value: FALSE Supported values: DEFAULT, TRUE, FALSE | `string` | `"FALSE"` | no |
+| <a name="input_pse_is_public"></a> [pse\_is\_public](#input\_pse\_is\_public) | (Optional) Enable or disable public access for the Service Edge Group. Default value is false | `bool` | `false` | no |
 | <a name="input_zpa_trusted_network_name"></a> [zpa\_trusted\_network\_name](#input\_zpa\_trusted\_network\_name) | To query trusted network that are associated with a specific Zscaler cloud, it is required to append the cloud name to the name of the trusted network. For more details refer to docs: https://registry.terraform.io/providers/zscaler/zpa/latest/docs/data-sources/zpa_trusted_network | `string` | `""` | no |
 
 ## Outputs

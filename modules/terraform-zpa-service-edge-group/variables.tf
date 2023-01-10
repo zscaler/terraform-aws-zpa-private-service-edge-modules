@@ -70,13 +70,13 @@ variable "pse_group_version_profile_id" {
 }
 
 variable "pse_is_public" {
-  type        = string
-  description = "(Optional) Enable or disable public access for the Service Edge Group. Default value: FALSE Supported values: DEFAULT, TRUE, FALSE"
-  default     = "FALSE"
+  type        = bool
+  description = "(Optional) Enable or disable public access for the Service Edge Group. Default value is false"
+  default     = false
 }
 
 variable "zpa_trusted_network_name" {
   type        = string
   description = "To query trusted network that are associated with a specific Zscaler cloud, it is required to append the cloud name to the name of the trusted network. For more details refer to docs: https://registry.terraform.io/providers/zscaler/zpa/latest/docs/data-sources/zpa_trusted_network"
-  default     = ""
+  default     = "" # a valid example name + cloud >> "Corporate-Network (zscalertwo.net)"
 }

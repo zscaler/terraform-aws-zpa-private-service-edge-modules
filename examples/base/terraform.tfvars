@@ -5,7 +5,7 @@
 ##### Custom variables. Only change if required for your environment  #####
 #####################################################################################################################
 
-## 1. AWS region where Private Service Edge resources will be deployed. This environment variable is automatically populated if running ZSEC script
+## 1. AWS region where Private Service Edge resources will be deployed. This environment variable is automatically populated if running ZSPSE script
 ##    and thus will override any value set here. Only uncomment and set this value if you are deploying terraform standalone. (Default: us-west-2)
 
 #aws_region                                 = "us-west-2"
@@ -14,7 +14,7 @@
 
 ##    IPv4 CIDR configured with VPC creation. All Subnet resources (Public / Private Service Edge) will be created based off this prefix
 ##    /24 subnets are created assuming this cidr is a /16. If you require creating a VPC smaller than /16, you may need to explicitly define all other 
-##     subnets via public_subnets and ac_subnets variables.
+##     subnets via public_subnets and pse_subnets variables.
 
 ##    Note: This variable only applies if you let Terraform create a new VPC. Custom deployment with byo_vpc enabled will ignore this
 

@@ -16,12 +16,16 @@ resource "zpa_service_edge_group" "service_edge_group" {
   country_code             = var.pse_group_country_code
   is_public                = var.pse_is_public
 
-  trusted_networks {
-    id = [data.zpa_trusted_network.example.id]
+  dynamic "trusted_networks" {
+    for_each = var.zpa_trusted_network_name != "" ? [var.zpa_trusted_network_name] : []
+    content {
+      id = [data.zpa_trusted_network.zpa_trusted_network[0].id]
+    }
   }
 }
 
 # ZPA Posture Profile Data Source
-data "zpa_trusted_network" "example" {
-  name = var.zpa_trusted_network_name
+data "zpa_trusted_network" "zpa_trusted_network" {
+  count = var.zpa_trusted_network_name != "" ? 1 : 0
+  name  = var.zpa_trusted_network_name
 }
