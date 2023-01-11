@@ -258,9 +258,24 @@ if [[ "$oper" == "up" && "$dtype" != base && ! -e ./.zspserc ]]; then
         read -r -p "Enter ZPA Cloud Name (PRODUCTION, BETA, GOV, or PREVIEW) [Default=$zpa_cloud_default]: " zpa_cloud_input
         zpa_cloud=${zpa_cloud_input:-$zpa_cloud_default}
         case $zpa_cloud in
-        PROD*|BETA|GOV|PRE*)
-          echo "ZPA Cloud selected: ${zpa_cloud}"
-          echo "export ZPA_CLOUD=\"${zpa_cloud}\"" >> .zspserc
+        PROD*|prod*|PRODUCTION|production)
+          echo "ZPA Cloud selected: PRODUCTION"
+          echo "export ZPA_CLOUD=\"PRODUCTION\"" >> .zspserc
+          break
+          ;;
+        BETA|beta|b|B)
+          echo "ZPA Cloud selected: BETA"
+          echo "export ZPA_CLOUD=\"BETA\"" >> .zspserc
+          break
+          ;;
+        GOV|gov|g|G)
+          echo "ZPA Cloud selected: GOV"
+          echo "export ZPA_CLOUD=\"GOV\"" >> .zspserc
+          break
+          ;;
+        PREVIEW|preview|pre*|PRE*)
+          echo "ZPA Cloud selected: PREVIEW"
+          echo "export ZPA_CLOUD=\"PREVIEW\"" >> .zspserc
           break
           ;;
           *)
