@@ -1,0 +1,89 @@
+
+---
+name: CI/CD
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+  schedule:
+    - cron: '0 0 1 * *'
+
+jobs:
+  pre-commit:
+    name: Verify the pre-commit framework was used properly by developers
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          # Semantic version range syntax (like 3.x) or the exact Python version
+          python-version: '3.9.4'
+
+      - name: Run pre-commit framework as the developer should run it
+        run: sudo ./scripts/install.sh && sudo ./scripts/run.sh
+
+      - name: The `git diff` showing whether the pre-commit mandated extra changes to the repository files
+        if: failure()
+        run: git diff
+
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 0.15.3
+
+      - name: terraform validate
+        env:
+          AWS_DEFAULT_REGION: us-west-2
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          for dir in $(find modules examples -type d -not \( -name ".?*" \) -maxdepth 1 -mindepth 1);
+          do
+            if [[ "$dir" == "modules/transit_gateway_peering" ]];
+            then
+              echo "Skipping directory: $dir"
+              echo "Terraform does not support validating a module which uses an aliased provider (module-specific; validating an entire configuration works fine)."
+              continue
+            fi
+
+            echo "Processing directory: $dir"
+            cd "$GITHUB_WORKSPACE/$dir"
+            terraform init -backend=false
+            terraform validate
+          done
+
+  zscaler-iac-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v2
+
+      - name : Zscaler IAC Scan
+        uses : ZscalerCWP/Zscaler-IaC-Action@v1.2.0
+        id: zscaler-iac-scan
+        with:
+          client_id : ${{ secrets.ZSCANNER_CLIENT_ID }}
+          client_secret : ${{ secrets.ZSCANNER_CLIENT_SECRET }}
+          region : 'US'
+          iac_dir : '../../'
+          iac_file : '../../'
+          output_format : 'human+github-sarif'
+          fail_build : 'false'
+      - name: Upload SARIF file
+        if: ${{ success() || failure() && (steps.zscaler-iac-scan.outputs.sarif_file_path != '') }}
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: ${{ steps.zscaler-iac-scan.outputs.sarif_file_path }}
