@@ -141,8 +141,8 @@ if [[ $dtype == "base" && ! -e ./.zspserc ]]; then
     unset AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
     read -r -p "Enter token code from MFA device: " mfa_token
     echo "getting session token (aws sts get-session-token --serial-number arn:aws:iam::${aws_account_id}:mfa/${aws_user_account} --token-code)"
-    aws sts get-session-token --serial-number arn:aws:iam::${aws_account_id}:mfa/${aws_user_account} --token-code ${mfa_token}  
-
+    aws sts get-session-token --serial-number arn:aws:iam::${aws_account_id}:mfa/${aws_user_account} --token-code ${mfa_token}
+ 
     fi
     read -r -p "Enter AWS Access Key ID: " aws_key
     read -r -p "Enter AWS Secret Access Key: " aws_secret
@@ -155,15 +155,15 @@ if [[ $dtype == "base" && ! -e ./.zspserc ]]; then
     echo "Delete .zspserc file and re-run zspse up..."
     exit 1
     fi
-    echo "export AWS_ACCESS_KEY_ID=${aws_key}" > .zspserc
-    echo "export AWS_SECRET_ACCESS_KEY=${aws_secret}" >> .zspserc
-    echo "export AWS_DEFAULT_REGION=${aws_region}" >> .zspserc
-    echo "export TF_VAR_aws_region=${aws_region}" >> .zspserc
+    echo "export AWS_ACCESS_KEY_ID='$aws_key'" > .zspserc
+    echo "export AWS_SECRET_ACCESS_KEY='$aws_secret'" >> .zspserc
+    echo "export AWS_DEFAULT_REGION='$aws_region'" >> .zspserc
+    echo "export TF_VAR_aws_region='$aws_region'" >> .zspserc
     if [[ $aws_session_token == "" ]]; then
     echo "No AWS Session Token entered..."
     else
     echo "AWS Session token entered..."
-    echo "export AWS_SESSION_TOKEN=${aws_session_token}" >> .zspserc 
+    echo "export AWS_SESSION_TOKEN='$aws_session_token'" >> .zspserc
     fi
 
     while [[ "$dtype" == "base" && "$oper" == "up" ]]; do
@@ -226,8 +226,8 @@ if [[ "$oper" == "up" && "$dtype" != base && ! -e ./.zspserc ]]; then
     unset AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
     read -r -p "Enter token code from MFA device: " mfa_token
     echo "getting session token (aws sts get-session-token --serial-number arn:aws:iam::${aws_account_id}:mfa/${aws_user_account} --token-code)"
-    aws sts get-session-token --serial-number arn:aws:iam::${aws_account_id}:mfa/${aws_user_account} --token-code ${mfa_token}
- 
+    aws sts get-session-token --serial-number arn:aws:iam::${aws_account_id}:mfa/${aws_user_account} --token-code ${mfa_token}  
+
     fi
     read -r -p "Enter AWS Access Key ID: " aws_key
     read -r -p "Enter AWS Secret Access Key: " aws_secret
@@ -240,19 +240,17 @@ if [[ "$oper" == "up" && "$dtype" != base && ! -e ./.zspserc ]]; then
     echo "Delete .zspserc file and re-run zspse up..."
     exit 1
     fi
-    echo "export AWS_ACCESS_KEY_ID=${aws_key}" > .zspserc
-    echo "export AWS_SECRET_ACCESS_KEY=${aws_secret}" >> .zspserc
-    echo "export AWS_DEFAULT_REGION=${aws_region}" >> .zspserc
-    echo "export TF_VAR_aws_region=${aws_region}" >> .zspserc
+    echo "export AWS_ACCESS_KEY_ID='$aws_key'" > .zspserc
+    echo "export AWS_SECRET_ACCESS_KEY='$aws_secret'" >> .zspserc
+    echo "export AWS_DEFAULT_REGION='$aws_region'" >> .zspserc
+    echo "export TF_VAR_aws_region='$aws_region'" >> .zspserc
     if [[ $aws_session_token == "" ]]; then
     echo "No AWS Session Token entered..."
     else
     echo "AWS Session token entered..."
-    echo "export AWS_SESSION_TOKEN=${aws_session_token}" >> .zspserc
+    echo "export AWS_SESSION_TOKEN='$aws_session_token'" >> .zspserc 
     fi
     
-    
-    echo "Enter ZPA credentials..."
     zpa_cloud_default=PRODUCTION
     while true; do
         read -r -p "Enter ZPA Cloud Name (PRODUCTION, BETA, GOV, or PREVIEW) [Default=$zpa_cloud_default]: " zpa_cloud_input
@@ -284,11 +282,11 @@ if [[ "$oper" == "up" && "$dtype" != base && ! -e ./.zspserc ]]; then
         esac
     done
     read -r -p "Enter ZPA Client ID: " zpa_client_id
-    echo "export ZPA_CLIENT_ID=\"${zpa_client_id}\"" >> .zspserc
+    echo "export ZPA_CLIENT_ID='$zpa_client_id'" >> .zspserc
     read -r -p "Enter ZPA Client Secret: " zpa_client_secret
-    echo "export ZPA_CLIENT_SECRET=\"${zpa_client_secret}\"" >> .zspserc
+    echo "export ZPA_CLIENT_SECRET='$zpa_client_secret'" >> .zspserc
     read -r -p "Enter ZPA Customer ID: " zpa_customer_id
-    echo "export ZPA_CUSTOMER_ID=\"${zpa_customer_id}\"" >> .zspserc
+    echo "export ZPA_CUSTOMER_ID='$zpa_customer_id'" >> .zspserc
 
     while true; do
     read -r -p "Do you already have a Service Edge provisioning key to use? [yes/no] " prov_key_response
@@ -296,7 +294,7 @@ if [[ "$oper" == "up" && "$dtype" != base && ! -e ./.zspserc ]]; then
 	yes|y ) 
     read -r -p "Enter the name of your existing Service Edge provisioning key: " byo_provisioning_key_name
     echo "export TF_VAR_byo_provisioning_key=true" >> .zspserc
-    echo "export TF_VAR_byo_provisioning_key_name=${byo_provisioning_key_name}" >> .zspserc
+    echo "export TF_VAR_byo_provisioning_key_name='$byo_provisioning_key_name'" >> .zspserc
     break
     ;;
 	no|n )
@@ -398,12 +396,12 @@ while true; do
 psevm_instance_type=${psevm_instance_type_input:-$psevm_instance_type_default}    
     case $psevm_instance_type in
       t3.xlarge|m5.large|m5.xlarge|m5.2xlarge|m5.4xlarge)
-          echo "PSE EC2 type: ${psevm_instance_type}"
-          echo "export TF_VAR_psevm_instance_type=${psevm_instance_type}" >> .zspserc
+          echo "PSE EC2 type: $psevm_instance_type"
+          echo "export TF_VAR_psevm_instance_type='$psevm_instance_type'" >> .zspserc
           break
       ;;
       *)
-          echo "Invalid Service Edge VM type: ${psevm_instance_type}. Please enter an approved VM type"
+          echo "Invalid Service Edge VM type: $psevm_instance_type. Please enter an approved VM type"
       ;;
     esac
 done
@@ -824,7 +822,6 @@ fi
 # Only check for existing aws session token if user has not already been prompted for it in zspse up sequence
 if [[ -z $aws_session_token ]]; then
 
-
 # Prompt user to refresh AWS credentials on up or destroy if there is a previous session token in .zspserc
 if [[ $mfa_enabled == false ]]; then
     if [ -z "$AWS_SESSION_TOKEN" ]; then
@@ -847,14 +844,14 @@ if [[ $mfa_enabled == false ]]; then
         sed -i'' -e '/AWS_ACCESS_KEY_ID/d' .zspserc
         sed -i'' -e '/AWS_SECRET_ACCESS_KEY/d' .zspserc
         sed -i'' -e '/AWS_SESSION_TOKEN/d' .zspserc
-        echo "export AWS_ACCESS_KEY_ID=${aws_key}" >> .zspserc
-        echo "export AWS_SECRET_ACCESS_KEY=${aws_secret}" >> .zspserc
+        echo "export AWS_ACCESS_KEY_ID='$aws_key'" >> .zspserc
+        echo "export AWS_SECRET_ACCESS_KEY='$aws_secret'" >> .zspserc
             if [[ $aws_session_token == "" ]]; then
             echo "No AWS Session Token entered..."
             echo "export AWS_SESSION_TOKEN=bad_input" >> .zspserc 
             else
             echo "AWS Session token entered..."
-            echo "export AWS_SESSION_TOKEN=${aws_session_token}" >> .zspserc 
+            echo "export AWS_SESSION_TOKEN='$aws_session_token'" >> .zspserc 
             fi
         break
         ;;
@@ -866,11 +863,10 @@ if [[ $mfa_enabled == false ]]; then
 . ./.zspserc
 fi 
 
-
 # Get new MFA session token
 if [[ $mfa_enabled == true ]]; then
     if [ -z "$AWS_SESSION_TOKEN" ]; then
-    echo "export AWS_SESSION_TOKEN=\"${aws_session_token}\"" >> .zspserc
+    echo "export AWS_SESSION_TOKEN='$aws_session_token'" >> .zspserc 
 else
     echo "zspserc file has existing session token. Resetting to ensure credentials are refreshed"
     echo "unsetting existing AWS Environment variables (unset AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)"
@@ -889,9 +885,9 @@ else
     read -r -p "Enter AWS Access Key ID: " aws_key
     read -r -p "Enter AWS Secret Access Key: " aws_secret
     read -r -p "Enter AWS Session Token: " aws_session_token
-    echo "export AWS_ACCESS_KEY_ID=${aws_key}" >> .zspserc
-    echo "export AWS_SECRET_ACCESS_KEY=${aws_secret}" >> .zspserc
-    echo "export AWS_SESSION_TOKEN=${aws_session_token}" >> .zspserc
+    echo "export AWS_ACCESS_KEY_ID='$aws_key'" >> .zspserc
+    echo "export AWS_SECRET_ACCESS_KEY='$aws_secret'" >> .zspserc
+    echo "export AWS_SESSION_TOKEN='$aws_session_token'" >> .zspserc
 fi    
     # Reinitialize environment variables
 . ./.zspserc
@@ -931,7 +927,7 @@ elif [[ "$oper" == "destroy" ]]; then
     else
       TF_DATA_DIR=../.terraform ./$dir/terraform -chdir="$dtype" destroy -compact-warnings
     fi
-    echo "Removing Terraform files and directories..."
+     echo "Removing Terraform files and directories..."
     rm -rf bin 
     rm -rf **/.terraform/* && rm -rf **/.terraform*
 	find . -type f -name '.terraform.lock.hcl' -delete
