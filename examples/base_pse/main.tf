@@ -160,8 +160,9 @@ resource "local_file" "user_data_file" {
 locals {
   al2userdata = <<AL2USERDATA
 #!/usr/bin/bash
-sudo /etc/yum.repos.d/zscaler.repo -R
-sudo cat > /etc/yum.repos.d/zscaler.repo <<-EOT
+sleep 15
+touch /etc/yum.repos.d/zscaler.repo
+cat > /etc/yum.repos.d/zscaler.repo <<-EOT
 [zscaler]
 name=Zscaler Private Access Repository
 baseurl=https://yum.private.zscaler.com/yum/el7
@@ -170,7 +171,7 @@ gpgcheck=1
 gpgkey=https://yum.private.zscaler.com/gpg
 EOT
 #Install Service Edge packages
-sudo yum install zpa-service-edge -y
+yum install zpa-service-edge -y
 #Stop the Service Edge service which was auto-started at boot time
 systemctl stop zpa-service-edge
 #Create a file from the Service Edge provisioning key created in the ZPA Admin Portal
@@ -195,7 +196,43 @@ resource "local_file" "al2_user_data_file" {
   filename = "../user_data"
 }
 
+
+################################################################################
+# Locate Latest Service Edge AMI by product code
+# Latest Software version and AMI ID in each region can be located here:
+# https://aws.amazon.com/marketplace/server/configuration?productId=ff37a29a-8ec3-44c5-8010-e6ee4d0f56d0&ref_=psb_cfg_continue
+################################################################################
+data "aws_ami" "service_edge" {
+  count       = var.use_zscaler_ami ? 1 : 0
+  most_recent = true
+
+  filter {
+    name   = "product-code"
+    values = ["f3xw1xhjj0gvf0o97rfphs0k0"]
+  }
+
+  owners = ["aws-marketplace"]
+}
+
+
+################################################################################
+# Locate Latest Amazon Linux 2 AMI for instance use
+# Used only if use_zscaler_ami variable set to false
+################################################################################
+data "aws_ssm_parameter" "amazon_linux_latest" {
+  count = var.use_zscaler_ami ? 0 : 1
+  name  = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+}
+
+
+locals {
+  ami_selected = try(data.aws_ami.service_edge[0].id, data.aws_ssm_parameter.amazon_linux_latest[0].value)
+}
+
+
+################################################################################
 # Create specified number of PSE appliances
+################################################################################
 module "pse_vm" {
   source                      = "../../modules/terraform-zspse-psevm-aws"
   pse_count                   = var.pse_count
@@ -209,7 +246,7 @@ module "pse_vm" {
   iam_instance_profile        = module.pse_iam.iam_instance_profile_id
   security_group_id           = module.pse_sg.pse_security_group_id
   associate_public_ip_address = var.associate_public_ip_address
-  use_zscaler_ami             = var.use_zscaler_ami
+  ami_id                      = contains(var.ami_id, "") ? [local.ami_selected] : var.ami_id
 
   depends_on = [
     module.zpa_provisioning_key,

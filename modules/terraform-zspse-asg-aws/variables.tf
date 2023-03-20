@@ -137,10 +137,10 @@ variable "target_cpu_util_value" {
   default     = 50
 }
 
-variable "use_zscaler_ami" {
-  type        = bool
-  description = "By default, Service Edge will deploy via the Zscaler Latest AMI. Setting this to false will deploy the latest Amazon Linux 2 AMI instead"
-  default     = true
+variable "ami_id" {
+  type        = list(string)
+  description = "AMI ID(s) to be used for deploying Private Service Edge appliances. Ideally all VMs should be on the same AMI ID as templates always pull the latest from AWS Marketplace. This variable is provided if a customer desires to override/retain an old ami for existing deployments rather than upgrading and forcing a replacement. It is also inputted as a list to facilitate if a customer desired to manually upgrade select PSEs deployed based on the pse_count index"
+  default     = [""]
 }
 
 variable "ebs_volume_type" {

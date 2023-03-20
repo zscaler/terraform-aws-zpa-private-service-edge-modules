@@ -1,30 +1,4 @@
 ################################################################################
-# Locate Latest Amazon Linux 2 AMI for instance use
-# Used only if use_zscaler_ami variable set to false
-################################################################################
-data "aws_ssm_parameter" "amazon_linux_latest" {
-  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
-}
-
-
-################################################################################
-# Locate Latest Service Edge AMI by product code
-# Latest Software version and AMI ID in each region can be located here:
-# https://aws.amazon.com/marketplace/server/configuration?productId=8ba43891-b39b-4200-9cc7-032845af4634&ref_=psb_cfg_continue
-################################################################################
-data "aws_ami" "service_edge" {
-  most_recent = true
-
-  filter {
-    name   = "product-code"
-    values = ["89m6h1zvds9p3zju6hvutudro"]
-  }
-
-  owners = ["aws-marketplace"]
-}
-
-
-################################################################################
 # Retrieve the default AWS KMS key in the current region for EBS encryption
 ################################################################################
 data "aws_ebs_default_kms_key" "current_kms_key" {
@@ -48,7 +22,7 @@ data "aws_kms_alias" "current_kms_arn" {
 resource "aws_launch_template" "pse_launch_template" {
   count         = 1
   name          = "${var.name_prefix}-pse-launch-template-${var.resource_tag}"
-  image_id      = var.use_zscaler_ami == true ? data.aws_ami.service_edge.id : data.aws_ssm_parameter.amazon_linux_latest.value
+  image_id      = element(var.ami_id, count.index)
   instance_type = var.psevm_instance_type
   key_name      = var.instance_key
   user_data     = base64encode(var.user_data)
