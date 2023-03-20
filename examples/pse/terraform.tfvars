@@ -2,7 +2,7 @@
 ## Uncomment and change the below variables according to your specific environment
 
 #####################################################################################################################
-##### Variables 5-14 are populated automatically if terraform is ran via ZSPSE bash script.  ##### 
+##### Variables 5-15 are populated automatically if terraform is ran via ZSPSE bash script.  ##### 
 ##### Modifying the variables in this file will override any inputs from ZSPSE               #####
 #####################################################################################################################
 
@@ -135,30 +135,39 @@
 
 #reuse_iam                                      = true
 
+## 15. By default, terraform will always query the AWS Marketplace for the latest Private Service Edge AMI available.
+##     This variable is provided if a customer desires to override or retain an old ami for existing deployments rather than upgrading and forcing a replacement. 
+##     It is also inputted as a list to facilitate if a customer desired to manually upgrade only select PSEs deployed based on the pse_count index
+
+##     Note: Customers should NOT be hard coding AMI IDs as Zscaler recommendation is to always be deploying/running the latest version.
+##           Leave this variable commented out unless you are absolutely certain why/that you need to set it and only temporarily.
+
+#ami_id                                         = ["ami-123456789"]
+
 
 #####################################################################################################################
 ##### Custom BYO variables. Only applicable for deployments without "base" resource requirements  #####
 #####                                 E.g. "pse"                                                  #####
 #####################################################################################################################
 
-## 15. By default, this script will create a new AWS VPC.
+## 16. By default, this script will create a new AWS VPC.
 ##     Uncomment if you want to deploy all resources to a VPC that already exists (true or false. Default: false)
 
 #byo_vpc                                        = true
 
-## 16. Provide your existing VPC ID. Only uncomment and modify if you set byo_vpc to true. (Default: null)
+## 17. Provide your existing VPC ID. Only uncomment and modify if you set byo_vpc to true. (Default: null)
 ##     Example: byo_vpc_id = "vpc-0588ce674df615334"
 
 #byo_vpc_id                                     = "vpc-0588ce674df615334"
 
-## 17. By default, this script will create new AWS subnets in the VPC defined based on az_count.
+## 18. By default, this script will create new AWS subnets in the VPC defined based on az_count.
 ##     Uncomment if you want to deploy all resources to subnets that already exist (true or false. Default: false)
 ##     Dependencies require in order to reference existing subnets, the corresponding VPC must also already exist.
 ##     Setting byo_subnet to true means byo_vpc must ALSO be set to true.
 
 #byo_subnets                                    = true
 
-## 18. Provide your existing Service Edge private subnet IDs. Only uncomment and modify if you set byo_subnets to true.
+## 19. Provide your existing Service Edge private subnet IDs. Only uncomment and modify if you set byo_subnets to true.
 ##     Subnet IDs must be added as a list with order determining assocations for resources like aws_instance, NAT GW,
 ##     Route Tables, etc. Provide only one subnet per Availability Zone in a VPC
 ##
@@ -170,19 +179,19 @@
 
 #byo_subnet_ids                                 = ["subnet-id"]
 
-## 19. By default, this script will create a new Internet Gateway resource in the VPC.
+## 20. By default, this script will create a new Internet Gateway resource in the VPC.
 ##     Uncomment if you want to utlize an IGW that already exists (true or false. Default: false)
 ##     Dependencies require in order to reference an existing IGW, the corresponding VPC must also already exist.
 ##     Setting byo_igw to true means byo_vpc must ALSO be set to true.
 
 #byo_igw                                        = true
 
-## 20. Provide your existing Internet Gateway ID. Only uncomment and modify if you set byo_igw to true.
+## 21. Provide your existing Internet Gateway ID. Only uncomment and modify if you set byo_igw to true.
 ##     Example: byo_igw_id = "igw-090313c21ffed44d3"
 
 #byo_igw_id                                     = "igw-090313c21ffed44d3"
 
-## 21. By default, this script will create new Public Subnets, and NAT Gateway w/ Elastic IP in the VPC defined or selected.
+## 22. By default, this script will create new Public Subnets, and NAT Gateway w/ Elastic IP in the VPC defined or selected.
 ##     It will also create a Route Table forwarding default 0.0.0.0/0 next hop to the Internet Gateway that is created or defined 
 ##     based on the byo_igw variable and associate with the public subnet(s)
 ##     Uncomment if you want to deploy Service Edges routing to NAT Gateway(s)/Public Subnet(s) that already exist (true or false. Default: false)
@@ -191,7 +200,7 @@
 
 #byo_ngw                                        = true
 
-## 22. Provide your existing NAT Gateway IDs. Only uncomment and modify if you set byo_subnets to true
+## 23. Provide your existing NAT Gateway IDs. Only uncomment and modify if you set byo_subnets to true
 ##     NAT Gateway IDs must be added as a list with order determining assocations for the PSE Route Tables (pse-rt)
 ##     nat_gateway_id next hop
 ##
@@ -210,23 +219,23 @@
 
 #byo_ngw_ids                                    = ["nat-id"]
 
-## 23. By default, this script will create new IAM roles, policy, and Instance Profiles for the Service Edge
+## 24. By default, this script will create new IAM roles, policy, and Instance Profiles for the Service Edge
 ##     Uncomment if you want to use your own existing IAM Instance Profiles (true or false. Default: false)
 
 #byo_iam                                        = true
 
-## 24. Provide your existing Instance Profile resource names. Only uncomment and modify if you set byo_iam to true
+## 25. Provide your existing Instance Profile resource names. Only uncomment and modify if you set byo_iam to true
 
 ##    Example: byo_iam_instance_profile_id      = ["instance-profile-1","instance-profile-2"]
 
 #byo_iam_instance_profile_id                    = ["instance-profile-1"]
 
-## 25. By default, this script will create new Security Groups for the Service Edge interface
+## 26. By default, this script will create new Security Groups for the Service Edge interface
 ##     Uncomment if you want to use your own existing SGs (true or false. Default: false)
 
 #byo_security_group                             = true
 
-## 26. Provide your existing Security Group resource names. Only uncomment and modify if you set byo_security_group to true
+## 27. Provide your existing Security Group resource names. Only uncomment and modify if you set byo_security_group to true
 
 ##     Example: byo_security_group_id           = ["sg-1","sg-2"]
 
