@@ -4,7 +4,6 @@ All notable changes to this project will be documented in this file.
 
 ## 1.0.0 (2023-01-11)
 
-
 ### Features
 
 * AWS Service Edge release ([eee9078](https://github.com/zscaler/terraform-aws-zpa-private-service-edge-modules/commit/eee907892f461e9494511fa2bcdc11b84581f0fd))
