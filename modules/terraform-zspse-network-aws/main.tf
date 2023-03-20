@@ -52,7 +52,7 @@ data "aws_internet_gateway" "igw_selected" {
 # Create NAT Gateway and assign EIP per AZ. This will not be created if var.byo_ngw is set to True
 # or if Service Edges are assigned public IP addresses directly with no bastion host creation
 resource "aws_eip" "eip" {
-  count      = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false ? length(aws_subnet.public_subnet[*].id) : 0
+  count      = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false || var.associate_public_ip_address == true && var.bastion_deploy == true ? length(aws_subnet.public_subnet[*].id) : 0
   vpc        = true
   depends_on = [data.aws_internet_gateway.igw_selected]
 
@@ -63,7 +63,7 @@ resource "aws_eip" "eip" {
 
 # Create 1 NAT Gateway per Public Subnet.
 resource "aws_nat_gateway" "ngw" {
-  count         = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false ? length(aws_subnet.public_subnet[*].id) : 0
+  count         = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false || var.associate_public_ip_address == true && var.bastion_deploy == true ? length(aws_subnet.public_subnet[*].id) : 0
   allocation_id = aws_eip.eip[count.index].id
   subnet_id     = aws_subnet.public_subnet[count.index].id
   depends_on    = [data.aws_internet_gateway.igw_selected]
@@ -86,7 +86,7 @@ data "aws_nat_gateway" "ngw_selected" {
 # Create equal number of Public/NAT Subnets to how many Service Edge subnets exist. This will not be created if var.byo_ngw is set to True
 # or if Service Edges are assigned public IP addresses directly with no bastion host creation
 resource "aws_subnet" "public_subnet" {
-  count             = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false ? length(data.aws_subnet.pse_subnet_selected[*].id) : 0
+  count             = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false || var.associate_public_ip_address == true && var.bastion_deploy == true ? length(data.aws_subnet.pse_subnet_selected[*].id) : 0
   availability_zone = data.aws_availability_zones.available.names[count.index]
   cidr_block        = var.public_subnets != null ? element(var.public_subnets, count.index) : cidrsubnet(data.aws_vpc.vpc_selected.cidr_block, 8, count.index + 101)
   vpc_id            = data.aws_vpc.vpc_selected.id
@@ -100,7 +100,7 @@ resource "aws_subnet" "public_subnet" {
 # Create a public Route Table towards IGW. This will not be created if var.byo_ngw is set to True
 # or if Service Edges are assigned public IP addresses directly with no bastion host creation
 resource "aws_route_table" "public_rt" {
-  count  = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false ? 1 : 0
+  count  = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false || var.associate_public_ip_address == true && var.bastion_deploy == true ? 1 : 0
   vpc_id = data.aws_vpc.vpc_selected.id
 
   route {
@@ -117,7 +117,7 @@ resource "aws_route_table" "public_rt" {
 # Create equal number of Route Table associations to how many Public subnets exist. This will not be created if var.byo_ngw is set to True
 # or if Service Edges are assigned public IP addresses directly with no bastion host creation
 resource "aws_route_table_association" "public_rt_association" {
-  count          = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false ? length(aws_subnet.public_subnet[*].id) : 0
+  count          = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false || var.associate_public_ip_address == true && var.bastion_deploy == true ? length(aws_subnet.public_subnet[*].id) : 0
   subnet_id      = aws_subnet.public_subnet[count.index].id
   route_table_id = aws_route_table.public_rt[0].id
 }
