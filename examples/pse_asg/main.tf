@@ -154,8 +154,9 @@ resource "local_file" "user_data_file" {
 locals {
   al2userdata = <<AL2USERDATA
 #!/usr/bin/bash
-sudo /etc/yum.repos.d/zscaler.repo -R
-sudo cat > /etc/yum.repos.d/zscaler.repo <<-EOT
+sleep 15
+touch /etc/yum.repos.d/zscaler.repo
+cat > /etc/yum.repos.d/zscaler.repo <<-EOT
 [zscaler]
 name=Zscaler Private Access Repository
 baseurl=https://yum.private.zscaler.com/yum/el7
@@ -164,7 +165,7 @@ gpgcheck=1
 gpgkey=https://yum.private.zscaler.com/gpg
 EOT
 #Install Service Edge packages
-sudo yum install zpa-service-edge -y
+yum install zpa-service-edge -y
 #Stop the Service Edge service which was auto-started at boot time
 systemctl stop zpa-service-edge
 #Create a file from the Service Edge provisioning key created in the ZPA Admin Portal
