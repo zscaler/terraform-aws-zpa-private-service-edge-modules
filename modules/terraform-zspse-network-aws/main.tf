@@ -23,7 +23,8 @@ resource "aws_vpc" "vpc" {
 
 # Or reference an existing VPC
 data "aws_vpc" "vpc_selected" {
-  id = var.byo_vpc == false ? aws_vpc.vpc[0].id : var.byo_vpc_id
+  count = var.byo_vpc ? 1 : 0
+  id    = var.byo_vpc_id
 }
 
 
@@ -33,7 +34,7 @@ data "aws_vpc" "vpc_selected" {
 # Create an Internet Gateway
 resource "aws_internet_gateway" "igw" {
   count  = var.byo_igw == false ? 1 : 0
-  vpc_id = data.aws_vpc.vpc_selected.id
+  vpc_id = try(data.aws_vpc.vpc_selected[0].id, aws_vpc.vpc[0].id)
 
   tags = merge(var.global_tags,
     { Name = "${var.name_prefix}-igw-${var.resource_tag}" }
@@ -88,8 +89,8 @@ data "aws_nat_gateway" "ngw_selected" {
 resource "aws_subnet" "public_subnet" {
   count             = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false || var.associate_public_ip_address == true && var.bastion_deploy == true ? length(data.aws_subnet.pse_subnet_selected[*].id) : 0
   availability_zone = data.aws_availability_zones.available.names[count.index]
-  cidr_block        = var.public_subnets != null ? element(var.public_subnets, count.index) : cidrsubnet(data.aws_vpc.vpc_selected.cidr_block, 8, count.index + 101)
-  vpc_id            = data.aws_vpc.vpc_selected.id
+  cidr_block        = var.public_subnets != null ? element(var.public_subnets, count.index) : cidrsubnet(try(data.aws_vpc.vpc_selected[0].cidr_block, aws_vpc.vpc[0].cidr_block), 8, count.index + 101)
+  vpc_id            = try(data.aws_vpc.vpc_selected[0].id, aws_vpc.vpc[0].id)
 
   tags = merge(var.global_tags,
     { Name = "${var.name_prefix}-public-subnet-${count.index + 1}-${var.resource_tag}" }
@@ -101,7 +102,7 @@ resource "aws_subnet" "public_subnet" {
 # or if Service Edges are assigned public IP addresses directly with no bastion host creation
 resource "aws_route_table" "public_rt" {
   count  = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false || var.associate_public_ip_address == true && var.bastion_deploy == true ? 1 : 0
-  vpc_id = data.aws_vpc.vpc_selected.id
+  vpc_id = try(data.aws_vpc.vpc_selected[0].id, aws_vpc.vpc[0].id)
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -131,8 +132,8 @@ resource "aws_subnet" "pse_subnet" {
   count = var.byo_subnets == false ? var.az_count : 0
 
   availability_zone = data.aws_availability_zones.available.names[count.index]
-  cidr_block        = var.pse_subnets != null ? element(var.pse_subnets, count.index) : cidrsubnet(data.aws_vpc.vpc_selected.cidr_block, 8, count.index + 200)
-  vpc_id            = data.aws_vpc.vpc_selected.id
+  cidr_block        = var.pse_subnets != null ? element(var.pse_subnets, count.index) : cidrsubnet(try(data.aws_vpc.vpc_selected[0].cidr_block, aws_vpc.vpc[0].cidr_block), 8, count.index + 200)
+  vpc_id            = try(data.aws_vpc.vpc_selected[0].id, aws_vpc.vpc[0].id)
 
   tags = merge(var.global_tags,
     { Name = "${var.name_prefix}-pse-subnet-${count.index + 1}-${var.resource_tag}" }
@@ -149,7 +150,7 @@ data "aws_subnet" "pse_subnet_selected" {
 # Create Route Tables for PSE subnets pointing to NAT Gateway resource in each AZ or however many were specified. Optionally, point directly to IGW for public deployments
 resource "aws_route_table" "pse_rt" {
   count  = length(data.aws_subnet.pse_subnet_selected[*].id)
-  vpc_id = data.aws_vpc.vpc_selected.id
+  vpc_id = try(data.aws_vpc.vpc_selected[0].id, aws_vpc.vpc[0].id)
   route {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = var.associate_public_ip_address == false ? element(data.aws_nat_gateway.ngw_selected[*].id, count.index) : null
@@ -161,7 +162,7 @@ resource "aws_route_table" "pse_rt" {
   )
 }
 
-# AC subnet Route Table Association
+# PSE subnet Route Table Association
 resource "aws_route_table_association" "pse_rt_association" {
   count          = length(data.aws_subnet.pse_subnet_selected[*].id)
   subnet_id      = data.aws_subnet.pse_subnet_selected[count.index].id
