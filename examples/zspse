@@ -372,7 +372,7 @@ done
 fi
 
 while true; do
-    read -r -p "Should each Service Edge be assigned an automatic public IP address? (yes/no): " public_ip_response
+    read -r -p "Should each Service Edge be assigned a public Elastic IP address? (yes/no): " public_ip_response
 case $public_ip_response in 
 	yes|y ) 
     echo "Service Edges will have public IP addresses associated. No NAT Gateway is required/created..."

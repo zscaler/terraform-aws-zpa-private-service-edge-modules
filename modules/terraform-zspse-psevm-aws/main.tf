@@ -18,15 +18,14 @@ data "aws_kms_alias" "current_kms_arn" {
 # Create Service Edge VM
 ################################################################################
 resource "aws_instance" "pse_vm" {
-  count                       = var.pse_count
-  ami                         = element(var.ami_id, count.index)
-  instance_type               = var.psevm_instance_type
-  iam_instance_profile        = element(var.iam_instance_profile, count.index)
-  vpc_security_group_ids      = [element(var.security_group_id, count.index)]
-  subnet_id                   = element(var.pse_subnet_ids, count.index)
-  key_name                    = var.instance_key
-  associate_public_ip_address = var.associate_public_ip_address
-  user_data                   = base64encode(var.user_data)
+  count                  = var.pse_count
+  ami                    = element(var.ami_id, count.index)
+  instance_type          = var.psevm_instance_type
+  iam_instance_profile   = element(var.iam_instance_profile, count.index)
+  vpc_security_group_ids = [element(var.security_group_id, count.index)]
+  subnet_id              = element(var.pse_subnet_ids, count.index)
+  key_name               = var.instance_key
+  user_data              = base64encode(var.user_data)
 
   ebs_optimized = true
 
@@ -48,4 +47,11 @@ resource "aws_instance" "pse_vm" {
   tags = merge(var.global_tags,
     { Name = "${var.name_prefix}-pse-vm-${count.index + 1}-${var.resource_tag}" }
   )
+}
+
+
+resource "aws_eip" "pse_eip" {
+  count    = var.associate_public_ip_address ? var.pse_count : 0
+  instance = aws_instance.pse_vm[count.index].id
+  vpc      = true
 }
