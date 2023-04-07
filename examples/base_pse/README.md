@@ -48,7 +48,7 @@ From base_pse directory execute:
 | <a name="requirement_null"></a> [null](#requirement\_null) | ~> 3.1.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.3.0 |
 | <a name="requirement_tls"></a> [tls](#requirement\_tls) | ~> 3.4.0 |
-| <a name="requirement_zpa"></a> [zpa](#requirement\_zpa) | ~> 2.6.0 |
+| <a name="requirement_zpa"></a> [zpa](#requirement\_zpa) | ~> 2.7.0 |
 
 ## Providers
 
