@@ -371,8 +371,14 @@ fi
 done
 fi
 
+
+
 while true; do
+    if [[ "$dtype" == *"asg"* ]]; then
+    read -r -p "Should each Service Edge be assigned an automatic public IP address? (yes/no): " public_ip_response
+    else
     read -r -p "Should each Service Edge be assigned a public Elastic IP address? (yes/no): " public_ip_response
+    fi
 case $public_ip_response in 
 	yes|y ) 
     echo "Service Edges will have public IP addresses associated. No NAT Gateway is required/created..."
@@ -389,6 +395,7 @@ case $public_ip_response in
 	* ) echo "invalid response. Please enter yes or no";;
     esac
 done
+
 
 psevm_instance_type_default=m5.large
 while true; do
