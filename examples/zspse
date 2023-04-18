@@ -377,11 +377,17 @@ while true; do
     if [[ "$dtype" == *"asg"* ]]; then
     read -r -p "Should each Service Edge be assigned an automatic public IP address? (yes/no): " public_ip_response
     else
-    read -r -p "Should each Service Edge be assigned a public Elastic IP address? (yes/no): " public_ip_response
+    read -r -p "Will these Service Edges be used for Public Remote Access? yes/no? (yes/no): " public_ip_response
     fi
 case $public_ip_response in 
 	yes|y ) 
-    echo "Service Edges will have public IP addresses associated. No NAT Gateway is required/created..."
+    if [[ "$dtype" == *"asg"* ]]; then
+    echo "AWS Launch Templates only support dynamic auto public IP assignment..."
+    echo "For Public Remote Access deployments, it is advised to manually create and assign EIPs to any Service Edges launched" 
+    else
+    echo "Service Edges will have static public EIP addresses associated. No NAT Gateway is required/created..."
+    echo "Post deployment, you will need to add the corresponding IPs to each Service Edge 'Public IPs' field in the ZPA Portal"
+    fi
     echo "export TF_VAR_associate_public_ip_address=true" >> .zspserc
     echo "export TF_VAR_pse_is_public=true" >> .zspserc
     associate_public_ip_address=true
