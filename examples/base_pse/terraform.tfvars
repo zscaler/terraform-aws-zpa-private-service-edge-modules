@@ -35,7 +35,7 @@
 #pse_group_upgrade_time_in_secs     = "66600"
 #pse_group_override_version_profile = true
 #pse_group_version_profile_id       = "2"
-#pse_is_public                      = "FALSE"
+#pse_is_public                      = false
 #zpa_trusted_network_name           = "Corporate-Network (zscalertwo.net)"   ### this variable is optional. leave commented out if not used  
 
 
