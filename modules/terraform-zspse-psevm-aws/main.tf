@@ -47,6 +47,12 @@ resource "aws_instance" "pse_vm" {
   tags = merge(var.global_tags,
     { Name = "${var.name_prefix}-pse-vm-${count.index + 1}-${var.resource_tag}" }
   )
+
+  lifecycle {
+    ignore_changes = [
+      root_block_device[0].kms_key_id
+    ]
+  }
 }
 
 
@@ -54,4 +60,8 @@ resource "aws_eip" "pse_eip" {
   count    = var.associate_public_ip_address ? var.pse_count : 0
   instance = aws_instance.pse_vm[count.index].id
   vpc      = true
+
+  tags = merge(var.global_tags,
+    { Name = "${var.name_prefix}-eip-psevm-${count.index + 1}-${var.resource_tag}" }
+  )
 }
