@@ -56,7 +56,8 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_availability_zone"></a> [availability\_zone](#output\_availability\_zone) | Instance Availability Zone |
+| <a name="output_eip_id"></a> [eip\_id](#output\_eip\_id) | Contains the EIP allocation ID |
+| <a name="output_eip_public_ip"></a> [eip\_public\_ip](#output\_eip\_public\_ip) | Instance Elastic Public IP |
 | <a name="output_id"></a> [id](#output\_id) | Instance ID |
 | <a name="output_private_ip"></a> [private\_ip](#output\_private\_ip) | Instance Private IP Address |
-| <a name="output_public_ip"></a> [public\_ip](#output\_public\_ip) | Instance Public IP |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
