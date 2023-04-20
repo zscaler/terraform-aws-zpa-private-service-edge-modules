@@ -15,10 +15,13 @@ ${join("\n", module.pse_vm.id)}
 All PSE Private IPs:
 ${join("\n", module.pse_vm.private_ip)}
 
-All PSE Public IPs:
-${join("\n", module.pse_vm.public_ip)}
+All PSE Elastic IP IDs (if EIPs created):
+${join("\n", module.pse_vm.eip_id)}
 
-All NAT GW IPs:
+All PSE Public IPs (if EIPs created):
+${join("\n", module.pse_vm.eip_public_ip)}
+
+All NAT GW IPs (if no EIPs created):
 ${join("\n", module.network.nat_gateway_ips)}
 
 All PSE IAM Role ARNs:

@@ -35,7 +35,7 @@
 #pse_group_upgrade_time_in_secs     = "66600"
 #pse_group_override_version_profile = true
 #pse_group_version_profile_id       = "2"
-#pse_is_public                      = "FALSE"
+#pse_is_public                      = false
 #zpa_trusted_network_name           = "Corporate-Network (zscalertwo.net)"   ### this variable is optional. leave commented out if not used  
 
 
@@ -89,12 +89,9 @@
 #pse_count                                       = 2
 
 ## 10. Enable/Disable public IP addresses on Service Edge instances. Default is false. Setting this to true will result in the following: 
-##    Dynamic Public IP address on the Service Edge VM Instance will be enabled; 
+##    Elastic IP address resource creation and assigned per Service Edge instance; 
 ##    No EIP or NAT Gateway resources will be created; 
 ##    The Service Edge Route Table default route next-hop will be set as the IGW
-
-##    Note: Service Edge has no external inbound network dependencies, so the recommendation is to leave this set to false and utilize a NAT Gateway
-##    for internet egress. Only enable this if you are certain you really want it for you environment.
 
 #associate_public_ip_address                    = true
 

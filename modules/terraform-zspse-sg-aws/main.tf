@@ -25,12 +25,16 @@ resource "aws_security_group" "pse_sg" {
   tags = merge(var.global_tags,
     { Name = "${var.name_prefix}-pse-${count.index + 1}-sg-${var.resource_tag}" }
   )
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Or use existing Security Group ID
 data "aws_security_group" "pse_sg_selected" {
-  count = var.byo_security_group == false ? length(aws_security_group.pse_sg[*].id) : length(var.byo_security_group_id)
-  id    = var.byo_security_group == false ? element(aws_security_group.pse_sg[*].id, count.index) : element(var.byo_security_group_id, count.index)
+  count = var.byo_security_group ? length(var.byo_security_group_id) : 0
+  id    = element(var.byo_security_group_id, count.index)
 }
 
 

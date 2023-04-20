@@ -26,6 +26,7 @@ No modules.
 
 | Name | Type |
 |------|------|
+| [aws_eip.pse_eip](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip) | resource |
 | [aws_instance.pse_vm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
 | [aws_ebs_default_kms_key.current_kms_key](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ebs_default_kms_key) | data source |
 | [aws_kms_alias.current_kms_arn](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_alias) | data source |
@@ -55,7 +56,8 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_availability_zone"></a> [availability\_zone](#output\_availability\_zone) | Instance Availability Zone |
+| <a name="output_eip_id"></a> [eip\_id](#output\_eip\_id) | Contains the EIP allocation ID |
+| <a name="output_eip_public_ip"></a> [eip\_public\_ip](#output\_eip\_public\_ip) | Instance Elastic Public IP |
 | <a name="output_id"></a> [id](#output\_id) | Instance ID |
 | <a name="output_private_ip"></a> [private\_ip](#output\_private\_ip) | Instance Private IP Address |
-| <a name="output_public_ip"></a> [public\_ip](#output\_public\_ip) | Instance Public IP |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
