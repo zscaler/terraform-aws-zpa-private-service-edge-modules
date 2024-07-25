@@ -7,10 +7,10 @@ data "aws_vpc" "selected" {
 
 
 ################################################################################
-# Pull Amazon Linux 2 AMI for instance use
+# Pull Amazon Linux 2023 AMI for instance use
 ################################################################################
 data "aws_ssm_parameter" "amazon_linux_latest" {
-  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64"
 }
 
 

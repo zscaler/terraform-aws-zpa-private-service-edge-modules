@@ -8,13 +8,13 @@ This module provides the resources necessary to create a new ZPA Service Edge Gr
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13.7, < 2.0.0 |
-| <a name="requirement_zpa"></a> [zpa](#requirement\_zpa) | ~> 2.7.0 |
+| <a name="requirement_zpa"></a> [zpa](#requirement\_zpa) | ~> 3.31.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_zpa"></a> [zpa](#provider\_zpa) | ~> 2.7.0 |
+| <a name="provider_zpa"></a> [zpa](#provider\_zpa) | ~> 3.31.0 |
 
 ## Modules
 

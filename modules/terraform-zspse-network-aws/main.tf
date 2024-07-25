@@ -54,7 +54,7 @@ data "aws_internet_gateway" "igw_selected" {
 # or if Service Edges are assigned public IP addresses directly with no bastion host creation
 resource "aws_eip" "eip" {
   count      = var.byo_ngw == false && var.associate_public_ip_address == false || var.associate_public_ip_address == false && var.bastion_deploy == false || var.associate_public_ip_address == true && var.bastion_deploy == true ? length(aws_subnet.public_subnet[*].id) : 0
-  vpc        = true
+  domain     = "vpc"
   depends_on = [data.aws_internet_gateway.igw_selected]
 
   tags = merge(var.global_tags,
