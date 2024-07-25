@@ -149,6 +149,13 @@ variable "ebs_volume_type" {
   default     = "gp3"
 }
 
+
+variable "ebs_block_device_name" {
+  type        = string
+  description = "EBS block device name"
+  default     = "/dev/xvda"
+}
+
 variable "encrypted_ebs_enabled" {
   type        = bool
   description = "true/false whether to encrypt root block ebs with default AWS KMS key"
