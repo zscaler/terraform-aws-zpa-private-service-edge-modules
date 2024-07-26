@@ -70,26 +70,33 @@ jobs:
           cd modules/terraform-zspse-network-aws
           terraform init   
 
-          - name: Terraform Validate
-          id: validate-zpa-app-connector-group
-          run: |
-            cd modules/terraform-zpa-app-connector-group
-            terraform validate -no-color
+      - name: Terraform Validate
+        id: validate-zspse-network-aws
+        run: |
+          cd modules/terraform-zspse-network-aws
+          terraform validate -no-color
   
       - name: Terraform Init
         id: init-zpa-app-connector-group
         run: |
           cd modules/terraform-zpa-app-connector-group
           terraform init   
-          - name: Terraform Validate
-          id: validate-zpa-provisioning-key
-          run: |
-            cd modules/terraform-zpa-provisioning-key
-            terraform validate -no-color
+
+      - name: Terraform Validate
+        id: validate-zpa-app-connector-group
+        run: |
+          cd modules/terraform-zpa-app-connector-group
+          terraform validate -no-color
   
       - name: Terraform Init
         id: init-zpa-provisioning-key
         run: |
           cd modules/terraform-zpa-provisioning-key
           terraform init   
+
+      - name: Terraform Validate
+        id: validate-zpa-provisioning-key
+        run: |
+          cd modules/terraform-zpa-provisioning-key
+          terraform validate -no-color
     

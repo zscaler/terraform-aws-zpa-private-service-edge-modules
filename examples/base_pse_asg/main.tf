@@ -39,7 +39,7 @@ resource "aws_key_pair" "deployer" {
 
 resource "local_file" "private_key" {
   content         = tls_private_key.key.private_key_pem
-  filename        = "../${var.name_prefix}-key-${random_string.suffix.result}.pem"
+  filename        = "./${var.name_prefix}-key-${random_string.suffix.result}.pem"
   file_permission = "0600"
 }
 
@@ -149,7 +149,7 @@ PSEUSERDATA
 resource "local_file" "user_data_file" {
   count    = var.use_zscaler_ami == true ? 1 : 0
   content  = local.pseuserdata
-  filename = "../user_data"
+  filename = "./user_data"
 }
 
 
@@ -171,7 +171,7 @@ name=Zscaler Private Access Repository
 baseurl=https://yum.private.zscaler.com/yum/el9
 enabled=1
 gpgcheck=1
-gpgkey=https://yum.private.zscaler.com/gpg
+gpgkey=https://yum.private.zscaler.com/yum/el9/gpg
 EOT
 
 # Sleep to allow the repo file to be registered
@@ -188,13 +188,13 @@ sudo ./aws/install --update -i /usr/bin/aws-cli -b /usr/bin
 # Verify AWS CLI installation
 /usr/bin/aws --version
 
-# Install App Connector packages
-yum install -y zpa-connector
+# Install Service Edge packages
+yum install zpa-service-edge -y
 
-# Stop the App Connector service which was auto-started at boot time
-systemctl stop zpa-connector
+# Stop the Service Edge service which was auto-started at boot time
+systemctl stop zpa-service-edge
 
-# Create a file from the App Connector provisioning key created in the ZPA Admin Portal
+# Create a file from the Service Edge provisioning key created in the ZPA Admin Portal
 # Make sure that the provisioning key is between double quotes
 echo "${module.zpa_provisioning_key.provisioning_key}" > /opt/zscaler/var/provision_key
 chmod 644 /opt/zscaler/var/provision_key
@@ -202,15 +202,15 @@ chmod 644 /opt/zscaler/var/provision_key
 # Run a yum update to apply the latest patches
 yum update -y
 
-# Start the App Connector service to enroll it in the ZPA cloud
-systemctl start zpa-connector
+# Start the Service Edge service to enroll it in the ZPA cloud
+systemctl start zpa-service-edge
 
-# Wait for the App Connector to download the latest build
+# Wait for the Service Edge to download the latest build
 sleep 60
 
-# Stop and then start the App Connector for the latest build
-systemctl stop zpa-connector
-systemctl start zpa-connector
+# Stop and then start the Service Edge for the latest build
+systemctl stop zpa-service-edge
+systemctl start zpa-service-edge
 RHEL9USERDATA
 }
 
@@ -218,7 +218,7 @@ RHEL9USERDATA
 resource "local_file" "rhel9_user_data_file" {
   count    = var.use_zscaler_ami == true ? 0 : 1
   content  = local.rhel9userdata
-  filename = "../user_data"
+  filename = "./user_data"
 }
 
 
