@@ -39,7 +39,7 @@ resource "aws_key_pair" "deployer" {
 
 resource "local_file" "private_key" {
   content         = tls_private_key.key.private_key_pem
-  filename        = "../${var.name_prefix}-key-${random_string.suffix.result}.pem"
+  filename        = "./${var.name_prefix}-key-${random_string.suffix.result}.pem"
   file_permission = "0600"
 }
 
@@ -143,51 +143,76 @@ PSEUSERDATA
 resource "local_file" "user_data_file" {
   count    = var.use_zscaler_ami == true ? 1 : 0
   content  = local.pseuserdata
-  filename = "../user_data"
+  filename = "./user_data"
 }
 
 
 ################################################################################
-# B. Create the user_data file with necessary bootstrap variables for Service   
-#    Edge registration. Used if variable use_zscaler_ami is set to true.
+# B. Create the user_data file with necessary bootstrap variables for App
+#    Connector registration. Used if variable use_zscaler_ami is set to false.
 ################################################################################
 locals {
-  al2userdata = <<AL2USERDATA
+  rhel9userdata = <<RHEL9USERDATA
 #!/usr/bin/bash
+# Sleep to allow the system to initialize
 sleep 15
+
+# Create the Zscaler repository file
 touch /etc/yum.repos.d/zscaler.repo
 cat > /etc/yum.repos.d/zscaler.repo <<-EOT
 [zscaler]
 name=Zscaler Private Access Repository
-baseurl=https://yum.private.zscaler.com/yum/el7
+baseurl=https://yum.private.zscaler.com/yum/el9
 enabled=1
 gpgcheck=1
-gpgkey=https://yum.private.zscaler.com/gpg
+gpgkey=https://yum.private.zscaler.com/yum/el9/gpg
 EOT
-#Install Service Edge packages
-yum install zpa-service-edge -y
-#Stop the Service Edge service which was auto-started at boot time
-systemctl stop zpa-service-edge
-#Create a file from the Service Edge provisioning key created in the ZPA Admin Portal
-#Make sure that the provisioning key is between double quotes
-echo "${module.zpa_provisioning_key.provisioning_key}" > /opt/zscaler/var/service-edge/provision_key
-#Run a yum update to apply the latest patches
-yum update -y
-#Start the Service Edge service to enroll it in the ZPA cloud
-systemctl start zpa-service-edge
-#Wait for the Service Edge to download latest build
+
+# Sleep to allow the repo file to be registered
 sleep 60
-#Stop and then start the Service Edge for the latest build
+
+# Install unzip
+yum install -y unzip
+
+# Download and install AWS CLI v2
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install --update -i /usr/bin/aws-cli -b /usr/bin
+
+# Verify AWS CLI installation
+/usr/bin/aws --version
+
+# Install Service Edge packages
+yum install zpa-service-edge -y
+
+# Stop the Service Edge service which was auto-started at boot time
+systemctl stop zpa-service-edge
+
+# Create a file from the Service Edge provisioning key created in the ZPA Admin Portal
+# Make sure that the provisioning key is between double quotes
+echo "${module.zpa_provisioning_key.provisioning_key}" > /opt/zscaler/var/provision_key
+chmod 644 /opt/zscaler/var/provision_key
+
+# Run a yum update to apply the latest patches
+yum update -y
+
+# Start the Service Edge service to enroll it in the ZPA cloud
+systemctl start zpa-service-edge
+
+# Wait for the Service Edge to download the latest build
+sleep 60
+
+# Stop and then start the Service Edge for the latest build
 systemctl stop zpa-service-edge
 systemctl start zpa-service-edge
-AL2USERDATA
+RHEL9USERDATA
 }
 
 # Write the file to local filesystem for storage/reference
-resource "local_file" "al2_user_data_file" {
+resource "local_file" "rhel9_user_data_file" {
   count    = var.use_zscaler_ami == true ? 0 : 1
-  content  = local.al2userdata
-  filename = "../user_data"
+  content  = local.rhel9userdata
+  filename = "./user_data"
 }
 
 
@@ -210,17 +235,24 @@ data "aws_ami" "service_edge" {
 
 
 ################################################################################
-# Locate Latest Amazon Linux 2 AMI for instance use
-# Used only if use_zscaler_ami variable set to false
+# Locate Latest Red Hat Enterprise Linux 9 AMI for instance use
 ################################################################################
-data "aws_ssm_parameter" "amazon_linux_latest" {
-  count = var.use_zscaler_ami ? 0 : 1
-  name  = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+
+# Data source to retrieve RHEL 9.4.0 AMI
+data "aws_ami" "rhel_9_latest" {
+  count       = var.use_zscaler_ami ? 0 : 1
+  most_recent = true
+  owners      = ["309956199498"]
+
+  filter {
+    name   = "name"
+    values = ["RHEL-9.4.0_HVM-20240423-x86_64-62-Hourly2-GP3"]
+  }
 }
 
-
+# Local variable to select the appropriate AMI ID
 locals {
-  ami_selected = try(data.aws_ami.service_edge[0].id, data.aws_ssm_parameter.amazon_linux_latest[0].value)
+  ami_selected = try(data.aws_ami.service_edge[0].id, data.aws_ami.rhel_9_latest[0].id)
 }
 
 
@@ -234,7 +266,7 @@ module "pse_asg" {
   global_tags                 = local.global_tags
   pse_subnet_ids              = module.network.pse_subnet_ids
   instance_key                = aws_key_pair.deployer.key_name
-  user_data                   = var.use_zscaler_ami == true ? local.pseuserdata : local.al2userdata
+  user_data                   = var.use_zscaler_ami == true ? local.pseuserdata : local.rhel9userdata
   psevm_instance_type         = var.psevm_instance_type
   iam_instance_profile        = module.pse_iam.iam_instance_profile_id
   security_group_id           = module.pse_sg.pse_security_group_id
@@ -258,8 +290,6 @@ module "pse_asg" {
 
   depends_on = [
     module.zpa_provisioning_key,
-    local_file.user_data_file,
-    local_file.al2_user_data_file,
   ]
 }
 

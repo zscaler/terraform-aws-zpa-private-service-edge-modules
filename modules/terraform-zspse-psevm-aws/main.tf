@@ -59,7 +59,7 @@ resource "aws_instance" "pse_vm" {
 resource "aws_eip" "pse_eip" {
   count    = var.associate_public_ip_address ? var.pse_count : 0
   instance = aws_instance.pse_vm[count.index].id
-  vpc      = true
+  domain   = "vpc"
 
   tags = merge(var.global_tags,
     { Name = "${var.name_prefix}-eip-psevm-${count.index + 1}-${var.resource_tag}" }

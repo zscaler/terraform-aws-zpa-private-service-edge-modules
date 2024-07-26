@@ -224,19 +224,19 @@ variable "pse_group_enabled" {
 variable "pse_group_country_code" {
   type        = string
   description = "Optional: Country code of this Service Edge Group. example 'US'"
-  default     = ""
+  default     = "US"
 }
 
 variable "pse_group_latitude" {
   type        = string
   description = "Latitude of the Service Edge Group. Integer or decimal. With values in the range of -90 to 90"
-  default     = "37.3382082"
+  default     = "37.33874"
 }
 
 variable "pse_group_longitude" {
   type        = string
   description = "Longitude of the Service Edge Group. Integer or decimal. With values in the range of -90 to 90"
-  default     = "-121.8863286"
+  default     = "-121.8852525"
 }
 
 variable "pse_group_location" {

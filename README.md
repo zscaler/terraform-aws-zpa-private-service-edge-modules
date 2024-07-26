@@ -1,17 +1,17 @@
-<a href="https://terraform.io">
-    <img src="https://raw.githubusercontent.com/hashicorp/terraform-website/master/public/img/logo-text.svg" alt="Terraform logo" title="Terraform" height="50" width="250" />
-</a>
-<a href="https://www.zscaler.com/">
-    <img src="https://www.zscaler.com/themes/custom/zscaler/logo.svg" alt="Zscaler logo" title="Zscaler" height="50" width="250" />
-</a>
-
-
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/zscaler/terraform-aws-zpa-private-service-edge-modules?style=flat-square)
+![GitHub](https://img.shields.io/github/license/zscaler/terraform-aws-zpa-private-service-edge-modules?style=flat-square)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/zscaler/terraform-aws-zpa-private-service-edge-modules?style=flat-square)
+![Terraform registry downloads total](https://img.shields.io/badge/dynamic/json?color=green&label=downloads%20total&query=data.attributes.total&url=https%3A%2F%2Fregistry.terraform.io%2Fv2%2Fmodules%2Fzscaler%2Fzpa-private-service-edge-modules%2Faws%2Fdownloads%2Fsummary&style=flat-square)
+![Terraform registry download month](https://img.shields.io/badge/dynamic/json?color=green&label=downloads%20this%20month&query=data.attributes.month&url=https%3A%2F%2Fregistry.terraform.io%2Fv2%2Fmodules%2Fzscaler%2Fzpa-private-service-edge-modules%2Faws%2Fdownloads%2Fsummary&style=flat-square)
 [![Zscaler Community](https://img.shields.io/badge/zscaler-community-blue)](https://community.zscaler.com/)
-[![Slack](https://img.shields.io/badge/Join%20Our%20Community-Slack-blue)](https://forms.gle/3iMJvVmJDvmUy36q9)
+
 
 Zscaler Service Edge AWS Terraform Modules
-===========================================================================================================
+===========================================
 
+## Support Disclaimer
+
+-> **Disclaimer:** Please refer to our [General Support Statement](docs/guides/support.md) before proceeding with the use of this provider.
 
 ## Description
 This repository contains various modules and deployment configurations that can be used to deploy Zscaler Service Edge appliances to securely connect to workloads within Amazon Web Services (AWS) via the Zscaler Zero Trust Exchange. The examples directory contains complete automation scripts for both greenfield/POV and brownfield/production use.
@@ -22,12 +22,12 @@ These deployment templates are intended to be fully functional and self service 
 
 Our Deployment scripts are leveraging Terraform v1.1.9 that includes full binary and provider support for MacOS M1 chips, but any Terraform version 0.13.7 should be generally supported.
 
-- provider registry.terraform.io/hashicorp/aws v4.58.x
-- provider registry.terraform.io/hashicorp/random v3.3.x
-- provider registry.terraform.io/hashicorp/local v2.2.x
-- provider registry.terraform.io/hashicorp/null v3.1.x
-- provider registry.terraform.io/providers/hashicorp/tls v3.4.x
-- provider registry.terraform.io/providers/zscaler/zpa v2.5.x
+- provider registry.terraform.io/hashicorp/aws v5.58.x
+- provider registry.terraform.io/hashicorp/random v3.6.x
+- provider registry.terraform.io/hashicorp/local v2.5.x
+- provider registry.terraform.io/hashicorp/null v3.2.x
+- provider registry.terraform.io/providers/hashicorp/tls v4.0.x
+- provider registry.terraform.io/providers/zscaler/zpa v3.31.x
 
 ### AWS requirements
 1. A valid AWS account
@@ -38,8 +38,10 @@ Our Deployment scripts are leveraging Terraform v1.1.9 that includes full binary
 6. Subscribe and accept terms of using Zscaler Service Edge image at [this link](https://aws.amazon.com/marketplace/pp/prodview-epy3md7fcvk4g)
 
 ### Zscaler requirements
+This module leverages the Zscaler Private Access [ZPA Terraform Provider](https://registry.terraform.io/providers/zscaler/zpa/latest/docs) for the automated onboarding process. Before proceeding make sure you have the following pre-requistes ready.
+
 7. A valid Zscaler Private Access subscription and portal access
-8. Zscaler ZPA API Keys. Details on how to find and generate ZPA API keys can be located here: https://help.zscaler.com/zpa/about-api-keys#:~:text=An%20API%20key%20is%20required,from%20the%20API%20Keys%20page
+8. Zscaler ZPA API Keys. Details on how to find and generate ZPA API keys can be located [here](https://help.zscaler.com/zpa/about-api-keys#:~:text=An%20API%20key%20is%20required,from%20the%20API%20Keys%20page)
 - Client ID
 - Client Secret
 - Customer ID
