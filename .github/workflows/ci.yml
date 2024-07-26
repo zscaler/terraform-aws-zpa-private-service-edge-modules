@@ -77,15 +77,15 @@ jobs:
           terraform validate -no-color
   
       - name: Terraform Init
-        id: init-zpa-app-connector-group
+        id: init-zpa-service-edge-group
         run: |
-          cd modules/terraform-zpa-app-connector-group
+          cd modules/terraform-zpa-service-edge-group
           terraform init   
 
       - name: Terraform Validate
-        id: validate-zpa-app-connector-group
+        id: validate-zpa-service-edge-group
         run: |
-          cd modules/terraform-zpa-app-connector-group
+          cd modules/terraform-zpa-service-edge-group
           terraform validate -no-color
   
       - name: Terraform Init
