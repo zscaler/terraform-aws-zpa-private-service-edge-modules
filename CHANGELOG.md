@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+### [1.1.1](https://github.com/zscaler/terraform-aws-zpa-private-service-edge-modules/compare/v1.1.0...v1.1.1) (2025-04-08)
+
+
+### Bug Fixes
+
+* Upgraded ZPA Provider Version to v4.0.x and AWS to v5.90.x ([#8](https://github.com/zscaler/terraform-aws-zpa-private-service-edge-modules/issues/8)) ([1b33ebd](https://github.com/zscaler/terraform-aws-zpa-private-service-edge-modules/commit/1b33ebdb5855b2af7165551bf916528b41b266a6))
+
 ## 1.0.0 (2023-01-11)
 
 ### Features
