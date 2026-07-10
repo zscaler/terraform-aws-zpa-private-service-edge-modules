@@ -44,3 +44,30 @@ data "aws_iam_instance_profile" "pse_host_profile_selected" {
   count = var.byo_iam == false ? length(aws_iam_instance_profile.pse_host_profile[*].id) : length(var.byo_iam_instance_profile_id)
   name  = var.byo_iam == false ? element(aws_iam_instance_profile.pse_host_profile[*].name, count.index) : element(var.byo_iam_instance_profile_id, count.index)
 }
+
+
+################################################################################
+# IAM Policy for SSM Parameter Store (OAuth Token Registration)
+################################################################################
+data "aws_iam_policy_document" "pse_ssm_policy" {
+  version = "2012-10-17"
+  statement {
+    effect = "Allow"
+    actions = [
+      "ssm:PutParameter",
+      "ssm:AddTagsToResource",
+      "ssm:GetParameter",
+      "ssm:DeleteParameter"
+    ]
+    resources = [
+      "arn:aws:ssm:*:*:parameter/zpa/oauth-tokens/*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "pse_ssm_policy" {
+  count  = var.byo_iam == false ? var.iam_count : 0
+  name   = "${var.name_prefix}-pse-ssm-policy-${var.resource_tag}"
+  role   = aws_iam_role.pse_node_iam_role[count.index].id
+  policy = data.aws_iam_policy_document.pse_ssm_policy.json
+}

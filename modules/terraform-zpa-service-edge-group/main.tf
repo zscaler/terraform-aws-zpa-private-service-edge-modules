@@ -1,4 +1,36 @@
 ################################################################################
+# Retrieve the "Connector" enrollment certificate used for OAuth2 enrollment.
+# This module exclusively onboards App Connectors of type "Connector", so the
+# certificate name is intentionally hardcoded and not exposed as a variable.
+################################################################################
+# data "zpa_enrollment_cert" "connector" {
+#   name = "Connector"
+# }
+
+################################################################################
+# Retrieve the "Default" customer version profile. Only queried when the caller
+# overrides the version profile (override_version_profile = true) without
+# explicitly pinning a version_profile_id, in which case the module resolves the
+# "Default" upgrade track automatically. Supported provider profiles for
+# reference: "Default", "Previous Default", "New Release" (and *-el8 variants).
+################################################################################
+data "zpa_customer_version_profile" "default" {
+  count = var.pse_group_override_version_profile && var.pse_group_version_profile_id == "" ? 1 : 0
+  name  = "Default"
+}
+
+locals {
+  # The ZPA API requires version_profile_id to be "0" whenever the version
+  # profile is NOT overridden. When it IS overridden, honor an explicit caller
+  # value, otherwise fall back to the resolved "Default" profile id.
+  version_profile_id = (
+    var.pse_group_override_version_profile == false ? "0" :
+    var.pse_group_version_profile_id != "" ? var.pse_group_version_profile_id :
+    data.zpa_customer_version_profile.default[0].id
+  )
+}
+
+################################################################################
 # Create ZPA Private Service Edge Group
 ################################################################################
 # Create Private Service Edge Group
@@ -15,6 +47,7 @@ resource "zpa_service_edge_group" "service_edge_group" {
   enabled                  = var.pse_group_enabled
   country_code             = var.pse_group_country_code
   is_public                = var.pse_is_public
+  user_codes               = var.user_codes
 
   dynamic "trusted_networks" {
     for_each = var.zpa_trusted_network_name != "" ? [var.zpa_trusted_network_name] : []

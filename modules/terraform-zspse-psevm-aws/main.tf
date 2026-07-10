@@ -25,7 +25,7 @@ resource "aws_instance" "pse_vm" {
   vpc_security_group_ids = [element(var.security_group_id, count.index)]
   subnet_id              = element(var.pse_subnet_ids, count.index)
   key_name               = var.instance_key
-  user_data              = base64encode(var.user_data)
+  user_data_base64       = base64encode(element(var.user_data, count.index))
 
   ebs_optimized = true
 

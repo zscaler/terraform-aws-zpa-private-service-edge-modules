@@ -288,6 +288,33 @@ if [[ "$oper" == "up" && "$dtype" != base && ! -e ./.zspserc ]]; then
     read -r -p "Enter ZPA Customer ID: " zpa_customer_id
     echo "export ZPA_CUSTOMER_ID='$zpa_customer_id'" >> .zspserc
 
+    # Private Service Edge onboarding method. OAuth2 is the default and
+    # recommended approach; the provisioning key flow remains supported for
+    # those who prefer it or who already have an existing provisioning key.
+    onboarding_method_default=oauth
+    while true; do
+    read -r -p "Select Private Service Edge onboarding method (oauth or provisioning_key) [Default=$onboarding_method_default]: " onboarding_method_input
+onboarding_method=${onboarding_method_input:-$onboarding_method_default}
+    case $onboarding_method in
+	oauth|o )
+    echo "Onboarding method: oauth (Service Edges enroll via OAuth2 user codes)"
+    echo "export TF_VAR_onboarding_method='oauth'" >> .zspserc
+    onboarding_method=oauth
+    break
+    ;;
+	provisioning_key|p|pk )
+    echo "Onboarding method: provisioning_key"
+    echo "export TF_VAR_onboarding_method='provisioning_key'" >> .zspserc
+    onboarding_method=provisioning_key
+    break
+    ;;
+	* ) echo "invalid response. Please enter oauth or provisioning_key";;
+    esac
+done
+
+    # Only when using the provisioning key flow, ask whether to reuse an
+    # existing key or let Terraform create a new Service Edge Group + key.
+    if [[ "$onboarding_method" == "provisioning_key" ]]; then
     while true; do
     read -r -p "Do you already have a Service Edge provisioning key to use? [yes/no] " prov_key_response
     case $prov_key_response in 
@@ -305,6 +332,7 @@ if [[ "$oper" == "up" && "$dtype" != base && ! -e ./.zspserc ]]; then
 	* ) echo "invalid response. Please enter yes or no";;
     esac
 done
+    fi
 
     ami_default=zscaler
     while true; do

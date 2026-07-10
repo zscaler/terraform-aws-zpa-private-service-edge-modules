@@ -18,6 +18,11 @@ locals {
     Vendor                                                                              = "Zscaler"
     "zs-service-edge-cluster/${var.name_prefix}-cluster-${random_string.suffix.result}" = "shared"
   }
+
+  # Onboarding method switch. Default is OAuth2; set onboarding_method to
+  # "provisioning_key" (or byo_provisioning_key = true) to use the legacy
+  # provisioning key flow instead.
+  use_provisioning_key = var.onboarding_method == "provisioning_key" || var.byo_provisioning_key
 }
 
 
@@ -72,12 +77,34 @@ module "network" {
 
 
 ################################################################################
-# 2. Create ZPA Service Edge Group
+# 2. Generate Service Edge Group name with template variable support
 ################################################################################
-module "zpa_service_edge_group" {
-  count                              = var.byo_provisioning_key == true ? 0 : 1 # Only use this module if a new provisioning key is needed
+locals {
+  # Default naming pattern if not specified
+  default_pse_group_name = "${var.aws_region}-${module.network.vpc_id}"
+
+  # User-provided name with variable substitution
+  custom_pse_group_name = var.pse_group_name != "" ? replace(
+    replace(
+      replace(
+        replace(var.pse_group_name, "{region}", var.aws_region),
+        "{vpc_id}", module.network.vpc_id
+      ),
+      "{name_prefix}", var.name_prefix
+    ),
+    "{random_suffix}", random_string.suffix.result
+  ) : local.default_pse_group_name
+}
+
+
+################################################################################
+# 3. (Provisioning key flow only) Create the ZPA Service Edge Group and
+#    Provisioning Key up front so the key can be baked into the VM user_data.
+################################################################################
+module "zpa_service_edge_group_pk" {
+  count                              = local.use_provisioning_key && var.byo_provisioning_key == false ? 1 : 0
   source                             = "../../modules/terraform-zpa-service-edge-group"
-  pse_group_name                     = coalesce(var.pse_group_name, "${var.aws_region}-${module.network.vpc_id}")
+  pse_group_name                     = local.custom_pse_group_name
   pse_group_description              = "${var.pse_group_description}-${var.aws_region}-${module.network.vpc_id}"
   pse_group_enabled                  = var.pse_group_enabled
   pse_group_country_code             = var.pse_group_country_code
@@ -92,134 +119,82 @@ module "zpa_service_edge_group" {
   zpa_trusted_network_name           = var.zpa_trusted_network_name
 }
 
-
-################################################################################
-# 3. Create ZPA Provisioning Key (or reference existing if byo set)
-################################################################################
 module "zpa_provisioning_key" {
+  count                             = local.use_provisioning_key ? 1 : 0
   source                            = "../../modules/terraform-zpa-provisioning-key"
   enrollment_cert                   = var.enrollment_cert
-  provisioning_key_name             = coalesce(var.provisioning_key_name, "${var.aws_region}-${module.network.vpc_id}")
+  provisioning_key_name             = var.provisioning_key_name != "" ? var.provisioning_key_name : local.custom_pse_group_name
   provisioning_key_enabled          = var.provisioning_key_enabled
   provisioning_key_association_type = var.provisioning_key_association_type
   provisioning_key_max_usage        = var.provisioning_key_max_usage
-  pse_group_id                      = try(module.zpa_service_edge_group[0].service_edge_group_id, "")
+  pse_group_id                      = try(module.zpa_service_edge_group_pk[0].service_edge_group_id, "")
   byo_provisioning_key              = var.byo_provisioning_key
   byo_provisioning_key_name         = var.byo_provisioning_key_name
 }
 
 
 ################################################################################
-# 4. Create specified number PSE VMs per pse_count which will span equally across
-#    designated availability zones per az_count. E.g. pse_count set to 4 and
-#    az_count set to 2 will create 2x PSEs in AZ1 and 2x PSEs in AZ2
+# 4. (OAuth2 flow only) Create SSM Parameter Store parameters for OAuth token
+#    storage. Terraform creates these upfront, VMs update them with their codes.
 ################################################################################
+resource "aws_ssm_parameter" "oauth_tokens" {
+  count = local.use_provisioning_key == false && var.byo_ssm_parameter_name == "" ? var.pse_count : 0
+
+  name  = "/zpa/oauth-tokens/${var.name_prefix}-${var.aws_region}-pse-${count.index + 1}-${random_string.suffix.result}"
+  type  = "SecureString"
+  value = "PENDING" # Placeholder - will be updated by VM user_data
+
+  tags = merge(local.global_tags, {
+    Purpose = "ZPA-OAuth-Token"
+    VMIndex = count.index
+  })
+
+  lifecycle {
+    ignore_changes = [
+      value,
+    ]
+  }
+}
+
+locals {
+  ssm_parameter_names = var.byo_ssm_parameter_name == "" ? aws_ssm_parameter.oauth_tokens[*].name : [for i in range(var.pse_count) : "${var.byo_ssm_parameter_name}-${i}"]
+}
+
 
 ################################################################################
-# A. Create the user_data file with necessary bootstrap variables for Service   
-#    Edge registration. Used if variable use_zscaler_ami is set to false.
+# 5. Generate user_data using centralized scripts (Zscaler AMI or RHEL9 based
+#    on use_zscaler_ami). The onboarding_method flag selects between OAuth2 and
+#    provisioning key bootstrap logic inside the script.
 ################################################################################
 locals {
-  pseuserdata = <<PSEUSERDATA
-#!/bin/bash 
-#Stop the Service Edge service which was auto-started at boot time 
-systemctl stop zpa-service-edge 
-#Create a file from the Service Edge provisioning key created in the ZPA Admin Portal 
-#Make sure that the provisioning key is between double quotes 
-echo "${module.zpa_provisioning_key.provisioning_key}" > /opt/zscaler/var/service-edge/provision_key
-#Run a yum update to apply the latest patches 
-yum update -y 
-#Start the Service Edge service to enroll it in the ZPA cloud 
-systemctl start zpa-service-edge 
-#Wait for the Service Edge to download latest build 
-sleep 60 
-#Stop and then start the Service Edge for the latest build 
-systemctl stop zpa-service-edge 
-systemctl start zpa-service-edge
-PSEUSERDATA
-}
+  provisioning_key_value = local.use_provisioning_key ? try(module.zpa_provisioning_key[0].provisioning_key, "") : ""
 
-# Write the file to local filesystem for storage/reference
-resource "local_file" "user_data_file" {
-  count    = var.use_zscaler_ami == true ? 1 : 0
-  content  = local.pseuserdata
-  filename = "./user_data"
-}
+  # Zscaler AMI user_data (for Fixed VMs)
+  pseuserdata = [for i in range(var.pse_count) :
+    templatefile("${path.module}/../../scripts/user_data_zscaler.sh", {
+      onboarding_method    = local.use_provisioning_key ? "provisioning_key" : "oauth"
+      provisioning_key     = local.provisioning_key_value
+      ssm_parameter_name   = local.use_provisioning_key ? "" : local.ssm_parameter_names[i]
+      ssm_parameter_prefix = ""
+      is_asg               = false
+    })
+  ]
 
-
-################################################################################
-# B. Create the user_data file with necessary bootstrap variables for App
-#    Connector registration. Used if variable use_zscaler_ami is set to false.
-################################################################################
-locals {
-  rhel9userdata = <<RHEL9USERDATA
-#!/usr/bin/bash
-# Sleep to allow the system to initialize
-sleep 15
-
-# Create the Zscaler repository file
-touch /etc/yum.repos.d/zscaler.repo
-cat > /etc/yum.repos.d/zscaler.repo <<-EOT
-[zscaler]
-name=Zscaler Private Access Repository
-baseurl=https://yum.private.zscaler.com/yum/el9
-enabled=1
-gpgcheck=1
-gpgkey=https://yum.private.zscaler.com/yum/el9/gpg
-EOT
-
-# Sleep to allow the repo file to be registered
-sleep 60
-
-# Install unzip
-yum install -y unzip
-
-# Download and install AWS CLI v2
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install --update -i /usr/bin/aws-cli -b /usr/bin
-
-# Verify AWS CLI installation
-/usr/bin/aws --version
-
-# Install Service Edge packages
-yum install zpa-service-edge -y
-
-# Stop the Service Edge service which was auto-started at boot time
-systemctl stop zpa-service-edge
-
-# Create a file from the Service Edge provisioning key created in the ZPA Admin Portal
-# Make sure that the provisioning key is between double quotes
-echo "${module.zpa_provisioning_key.provisioning_key}" > /opt/zscaler/var/provision_key
-chmod 644 /opt/zscaler/var/provision_key
-
-# Run a yum update to apply the latest patches
-yum update -y
-
-# Start the Service Edge service to enroll it in the ZPA cloud
-systemctl start zpa-service-edge
-
-# Wait for the Service Edge to download the latest build
-sleep 60
-
-# Stop and then start the Service Edge for the latest build
-systemctl stop zpa-service-edge
-systemctl start zpa-service-edge
-RHEL9USERDATA
-}
-
-# Write the file to local filesystem for storage/reference
-resource "local_file" "rhel9_user_data_file" {
-  count    = var.use_zscaler_ami == true ? 0 : 1
-  content  = local.rhel9userdata
-  filename = "./user_data"
+  # RHEL9 user_data (for Fixed VMs)
+  rhel9userdata = [for i in range(var.pse_count) :
+    templatefile("${path.module}/../../scripts/user_data_rhel9.sh", {
+      onboarding_method    = local.use_provisioning_key ? "provisioning_key" : "oauth"
+      provisioning_key     = local.provisioning_key_value
+      ssm_parameter_name   = local.use_provisioning_key ? "" : local.ssm_parameter_names[i]
+      ssm_parameter_prefix = ""
+      is_asg               = false
+    })
+  ]
 }
 
 
 ################################################################################
 # Locate Latest Service Edge AMI by product code
-# Latest Software version and AMI ID in each region can be located here:
-# https://aws.amazon.com/marketplace/server/configuration?productId=ff37a29a-8ec3-44c5-8010-e6ee4d0f56d0&ref_=psb_cfg_continue
 ################################################################################
 data "aws_ami" "service_edge" {
   count       = var.use_zscaler_ami ? 1 : 0
@@ -237,8 +212,6 @@ data "aws_ami" "service_edge" {
 ################################################################################
 # Locate Latest Red Hat Enterprise Linux 9 AMI for instance use
 ################################################################################
-
-# Data source to retrieve RHEL 9.4.0 AMI
 data "aws_ami" "rhel_9_latest" {
   count       = var.use_zscaler_ami ? 0 : 1
   most_recent = true
@@ -255,8 +228,9 @@ locals {
   ami_selected = try(data.aws_ami.service_edge[0].id, data.aws_ami.rhel_9_latest[0].id)
 }
 
+
 ################################################################################
-# Create specified number of PSE appliances
+# 6. Create specified number of PSE appliances
 ################################################################################
 module "pse_vm" {
   source                      = "../../modules/terraform-zspse-psevm-aws"
@@ -274,15 +248,14 @@ module "pse_vm" {
   ami_id                      = contains(var.ami_id, "") ? [local.ami_selected] : var.ami_id
 
   depends_on = [
+    aws_ssm_parameter.oauth_tokens,
     module.zpa_provisioning_key
   ]
 }
 
+
 ################################################################################
-# 5. Create IAM Policy, Roles, and Instance Profiles to be assigned to PSE.
-#    Default behavior will create 1 of each IAM resource per PSE VM. Set variable
-#    "reuse_iam" to true if you would like a single IAM profile created and
-#    assigned to ALL Service Edges instead.
+# 7. Create IAM Policy, Roles, and Instance Profiles to be assigned to PSE.
 ################################################################################
 module "pse_iam" {
   source       = "../../modules/terraform-zspse-iam-aws"
@@ -299,10 +272,8 @@ module "pse_iam" {
 
 
 ################################################################################
-# 6. Create Security Group and rules to be assigned to the Service Edge
-#    interface. Default behavior will create 1 of each SG resource per PSE VM.
-#    Set variable "reuse_security_group" to true if you would like a single
-#    security group created and assigned to ALL Service Edges instead.
+# 8. Create Security Group and rules to be assigned to the Service Edge
+#    interface.
 ################################################################################
 module "pse_sg" {
   source                      = "../../modules/terraform-zspse-sg-aws"
@@ -317,4 +288,58 @@ module "pse_sg" {
   # optional inputs. only required if byo_security_group set to true
   byo_security_group_id = var.byo_security_group_id
   # optional inputs. only required if byo_security_group set to true
+}
+
+
+################################################################################
+# 9. (OAuth2 flow only) Retrieve OAuth2 user codes from SSM Parameter Store.
+#     VMs register tokens quickly (2-4 min), then Terraform reads them back.
+################################################################################
+
+# Wait for OAuth tokens to be registered in SSM
+resource "time_sleep" "wait_for_oauth_tokens" {
+  count      = local.use_provisioning_key ? 0 : 1
+  depends_on = [module.pse_vm]
+
+  create_duration = "360s" # 6 minutes - ensures all VMs have time to register
+}
+
+# Retrieve OAuth tokens from SSM Parameter Store
+data "aws_ssm_parameter" "oauth_tokens" {
+  count      = local.use_provisioning_key ? 0 : var.pse_count
+  name       = local.ssm_parameter_names[count.index]
+  depends_on = [time_sleep.wait_for_oauth_tokens, aws_ssm_parameter.oauth_tokens]
+}
+
+# Extract tokens from SSM parameters
+locals {
+  user_codes = local.use_provisioning_key ? [] : [for i in range(var.pse_count) : data.aws_ssm_parameter.oauth_tokens[i].value]
+}
+
+
+################################################################################
+# 10. (OAuth2 flow only) Create the ZPA Service Edge Group with OAuth2 user
+#     codes. Created AFTER waiting for all OAuth tokens to be ready.
+################################################################################
+module "zpa_service_edge_group" {
+  count                              = local.use_provisioning_key ? 0 : 1
+  source                             = "../../modules/terraform-zpa-service-edge-group"
+  pse_group_name                     = local.custom_pse_group_name
+  pse_group_description              = "${var.pse_group_description}-${var.aws_region}-${module.network.vpc_id}"
+  pse_group_enabled                  = var.pse_group_enabled
+  pse_group_country_code             = var.pse_group_country_code
+  pse_group_latitude                 = var.pse_group_latitude
+  pse_group_longitude                = var.pse_group_longitude
+  pse_group_location                 = var.pse_group_location
+  pse_group_upgrade_day              = var.pse_group_upgrade_day
+  pse_group_upgrade_time_in_secs     = var.pse_group_upgrade_time_in_secs
+  pse_group_override_version_profile = var.pse_group_override_version_profile
+  pse_group_version_profile_id       = var.pse_group_version_profile_id
+  pse_is_public                      = var.pse_is_public
+  zpa_trusted_network_name           = var.zpa_trusted_network_name
+  user_codes                         = local.user_codes
+
+  depends_on = [
+    data.aws_ssm_parameter.oauth_tokens
+  ]
 }
