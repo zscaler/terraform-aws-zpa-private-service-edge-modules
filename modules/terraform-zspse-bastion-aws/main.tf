@@ -15,22 +15,6 @@ data "aws_ssm_parameter" "amazon_linux_latest" {
 
 
 ################################################################################
-# Retrieve the default AWS KMS key in the current region for EBS encryption
-################################################################################
-data "aws_ebs_default_kms_key" "current_kms_key" {
-  count = var.encrypted_ebs_enabled ? 1 : 0
-}
-
-################################################################################
-# Retrieve an alias for the KMS key for EBS encryption
-################################################################################
-data "aws_kms_alias" "current_kms_arn" {
-  count = var.encrypted_ebs_enabled ? 1 : 0
-  name  = data.aws_ebs_default_kms_key.current_kms_key[0].key_arn
-}
-
-
-################################################################################
 # Create pre-defined AWS Security Groups and rules for Bastion
 ################################################################################
 resource "aws_security_group" "bastion" {
@@ -141,7 +125,6 @@ resource "aws_instance" "bastion" {
     delete_on_termination = true
     volume_size           = var.disk_size
     encrypted             = var.encrypted_ebs_enabled
-    kms_key_id            = var.encrypted_ebs_enabled ? data.aws_kms_alias.current_kms_arn[0].target_key_arn : null
     volume_type           = var.ebs_volume_type
     tags = merge(var.global_tags,
       { Name = "${var.name_prefix}-bastion-vm-ebs-${var.resource_tag}" }

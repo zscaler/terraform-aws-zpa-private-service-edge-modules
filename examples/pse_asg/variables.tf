@@ -52,12 +52,6 @@ variable "tls_key_algorithm" {
   default     = "RSA"
 }
 
-variable "pse_count" {
-  type        = number
-  description = "Default number of Service Edge appliances to create"
-  default     = 2
-}
-
 variable "psevm_instance_type" {
   type        = string
   description = "Service Edge Instance Type"
@@ -72,18 +66,6 @@ variable "psevm_instance_type" {
     )
     error_message = "Input psevm_instance_type must be set to an approved vm instance type."
   }
-}
-
-variable "reuse_security_group" {
-  type        = bool
-  description = "Specifies whether the SG module should create 1:1 security groups per instance or 1 security group for all instances"
-  default     = false
-}
-
-variable "reuse_iam" {
-  type        = bool
-  description = "Specifies whether the SG module should create 1:1 IAM per instance or 1 IAM for all instances"
-  default     = false
 }
 
 variable "associate_public_ip_address" {
@@ -177,6 +159,28 @@ variable "byo_security_group_id" {
   default     = null
 }
 
+# Onboarding method switch
+variable "onboarding_method" {
+  type        = string
+  description = "Private Service Edge onboarding method. 'oauth' (default) enrolls service edges via OAuth2 user codes retrieved from each VM. 'provisioning_key' uses the legacy provisioning key flow."
+  default     = "oauth"
+
+  validation {
+    condition = (
+      var.onboarding_method == "oauth" ||
+      var.onboarding_method == "provisioning_key"
+    )
+    error_message = "Input onboarding_method must be either 'oauth' or 'provisioning_key'."
+  }
+}
+
+# AWS Systems Manager Parameter Store configuration for OAuth token storage
+variable "byo_ssm_parameter_name" {
+  type        = string
+  description = "Bring your own SSM Parameter Store base name for OAuth tokens. If specified, module will use existing parameters named '{value}-0', '{value}-1', etc. If empty, module creates new parameters. Default: '' (create new)"
+  default     = ""
+}
+
 # ZPA Provider specific variables for Service Edge Group and Provisioning Key creation
 variable "byo_provisioning_key" {
   type        = bool
@@ -265,16 +269,17 @@ variable "pse_group_override_version_profile" {
 
 variable "pse_group_version_profile_id" {
   type        = string
-  description = "Optional: ID of the version profile. To learn more, see Version Profile Use Cases. https://help.zscaler.com/zpa/configuring-version-profile"
-  default     = "2"
+  description = "Optional: ID of the version profile to pin Private Service Edges to, used only when pse_group_override_version_profile is true. Leave empty (the default) to let the module resolve the 'Default' customer version profile automatically. When pse_group_override_version_profile is false, this value is ignored and the API is sent 0. To learn more, see https://help.zscaler.com/zpa/configuring-version-profile"
+  default     = ""
 
   validation {
     condition = (
-      var.pse_group_version_profile_id == "0" || #Default = 0
-      var.pse_group_version_profile_id == "1" || #Previous Default = 1
-      var.pse_group_version_profile_id == "2"    #New Release = 2
+      var.pse_group_version_profile_id == "" ||  # Not explicitly set; module resolves Default
+      var.pse_group_version_profile_id == "0" || # Default = 0
+      var.pse_group_version_profile_id == "1" || # Previous Default = 1
+      var.pse_group_version_profile_id == "2"    # New Release = 2
     )
-    error_message = "Input pse_group_version_profile_id must be set to an approved value."
+    error_message = "Input pse_group_version_profile_id must be empty or set to an approved value (0, 1, or 2)."
   }
 }
 

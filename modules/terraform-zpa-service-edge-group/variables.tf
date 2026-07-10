@@ -56,16 +56,17 @@ variable "pse_group_override_version_profile" {
 
 variable "pse_group_version_profile_id" {
   type        = string
-  description = "Optional: ID of the version profile. To learn more, see Version Profile Use Cases. https://help.zscaler.com/zpa/configuring-version-profile"
-  default     = "2"
+  description = "Optional: ID of the version profile to pin Private Service Edges to, used only when pse_group_override_version_profile is true. Leave empty (the default) to let the module resolve the 'Default' customer version profile automatically. When pse_group_override_version_profile is false, this value is ignored and the API is sent 0. To learn more, see https://help.zscaler.com/zpa/configuring-version-profile"
+  default     = ""
 
   validation {
     condition = (
-      var.pse_group_version_profile_id == "0" || #Default = 0
-      var.pse_group_version_profile_id == "1" || #Previous Default = 1
-      var.pse_group_version_profile_id == "2"    #New Release = 2
+      var.pse_group_version_profile_id == "" ||  # Not explicitly set; module resolves Default
+      var.pse_group_version_profile_id == "0" || # Default = 0
+      var.pse_group_version_profile_id == "1" || # Previous Default = 1
+      var.pse_group_version_profile_id == "2"    # New Release = 2
     )
-    error_message = "Input pse_group_version_profile_id must be set to an approved value."
+    error_message = "Input pse_group_version_profile_id must be empty or set to an approved value (0, 1, or 2)."
   }
 }
 
@@ -79,4 +80,10 @@ variable "zpa_trusted_network_name" {
   type        = string
   description = "To query trusted network that are associated with a specific Zscaler cloud, it is required to append the cloud name to the name of the trusted network. For more details refer to docs: https://registry.terraform.io/providers/zscaler/zpa/latest/docs/data-sources/zpa_trusted_network"
   default     = "" # a valid example name + cloud >> "Corporate-Network (zscalertwo.net)"
+}
+
+variable "user_codes" {
+  type        = list(string)
+  description = "OAuth2 user codes retrieved from deployed App Connector VMs (/etc/issue). These codes are required for enrolling App Connectors using the new OAuth2 authentication method."
+  default     = []
 }

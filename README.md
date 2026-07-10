@@ -18,16 +18,47 @@ This repository contains various modules and deployment configurations that can 
 
 These deployment templates are intended to be fully functional and self service for both greenfield/pov as well as production use. All modules may also be utilized as design recommendation based on Zscaler's Official [Zero Trust Access to Private Apps in AWS with ZPA](https://www.zscaler.com/resources/reference-architecture/zero-trust-with-zpa.pdf).
 
+## Service Edge Onboarding Methods
+
+This module supports **two** onboarding methods for enrolling Private Service Edges, selectable via the `onboarding_method` variable:
+
+| Method | `onboarding_method` | Status | Summary |
+|--------|---------------------|--------|---------|
+| **OAuth2 User Code** | `"oauth"` | **Default (recommended)** | Service Edges enroll automatically via OAuth2 user codes. No provisioning key is required. |
+| **Provisioning Key** | `"provisioning_key"` | Secondary (still fully supported) | The legacy flow. A provisioning key is created (or brought via `byo_provisioning_key`) and injected into each VM's `user_data`. |
+
+Both methods remain fully supported. OAuth2 is the default because it removes the need to pre-create and distribute provisioning keys, but you can opt back into the provisioning key flow at any time by setting `onboarding_method = "provisioning_key"`.
+
+### OAuth2 User Code flow (default)
+
+1. Terraform provisions the SSM parameters and the Service Edge VM(s)/Auto Scaling Group.
+2. Each Service Edge boots, generates its OAuth2 user code (written to `/etc/issue` on the VM), and publishes the code to **AWS SSM Parameter Store**.
+3. Terraform polls SSM Parameter Store until every expected user code is available.
+4. Terraform creates the Service Edge Group, passing the collected user codes.
+5. Private Service Edges are enrolled via the ZPA OAuth2 API.
+
+The token relay uses AWS SSM Parameter Store (not SSH). Instances are granted the minimal `ssm:PutParameter` / `ssm:GetParameter` permissions through the IAM module. By default the module creates SSM parameters under a generated prefix; set `byo_ssm_parameter_name` to use your own prefix or pre-created parameters.
+
+For Auto Scaling Group examples (`base_pse_asg`, `pse_asg`), Terraform discovers the ASG instances dynamically and reads back each instance's OAuth token from SSM before creating the Service Edge Group.
+
+### Provisioning Key flow (secondary)
+
+Set `onboarding_method = "provisioning_key"` to use the legacy flow. In this mode the ZPA provider creates a provisioning key (or reuses an existing one via `byo_provisioning_key` / `byo_provisioning_key_name`), and the key is written into each VM's `user_data`. SSM Parameter Store is not used in this mode. See the `terraform.tfvars` in each example for the full list of provisioning key variables.
+
+> This module requires the ZPA Terraform provider `>= 4.4.0` for OAuth2 user-code onboarding.
+
 ## Prerequisites
 
 Our Deployment scripts are leveraging Terraform v1.1.9 that includes full binary and provider support for MacOS M1 chips, but any Terraform version 0.13.7 should be generally supported.
 
-- provider registry.terraform.io/hashicorp/aws v5.58.x
+- provider registry.terraform.io/hashicorp/aws v5.94.x
 - provider registry.terraform.io/hashicorp/random v3.6.x
 - provider registry.terraform.io/hashicorp/local v2.5.x
 - provider registry.terraform.io/hashicorp/null v3.2.x
 - provider registry.terraform.io/providers/hashicorp/tls v4.0.x
-- provider registry.terraform.io/providers/zscaler/zpa v3.31.x
+- provider registry.terraform.io/providers/hashicorp/time v0.9.x
+- provider registry.terraform.io/providers/hashicorp/external v2.3.x (Auto Scaling Group examples)
+- provider registry.terraform.io/providers/zscaler/zpa v4.4.x or later (required for OAuth2 onboarding)
 
 ### AWS requirements
 1. A valid AWS account
@@ -60,7 +91,7 @@ provider "zpa" {
 }
 ```
 
-3. (Optional) An existing Service Edge Group and Provisioning Key. Otherwise, you can follow the prompts in the examples terraform.tfvars to create a new Connector Group and Provisioning Key
+3. (Optional) With the default `oauth` onboarding method no provisioning key is required. If you set `onboarding_method = "provisioning_key"`, you may optionally supply an existing Service Edge Group and Provisioning Key, or follow the prompts in the examples `terraform.tfvars` to create a new Service Edge Group and Provisioning Key.
 
 See: [Zscaler App Connector AWS Deployment Guide](https://help.zscaler.com/zpa/connector-deployment-guide-amazon-web-services) for additional prerequisite provisioning steps.
 
@@ -85,7 +116,7 @@ provider "zpa" {
 }
 ```
 
-4. (Optional) An existing Service Edge Group and Provisioning Key. Otherwise, you can follow the prompts in the examples terraform.tfvars to create a new Connector Group and Provisioning Key
+4. (Optional) With the default `oauth` onboarding method no provisioning key is required. If you set `onboarding_method = "provisioning_key"`, you may optionally supply an existing Service Edge Group and Provisioning Key, or follow the prompts in the examples `terraform.tfvars` to create a new Service Edge Group and Provisioning Key.
 
 See: [Zscaler Service Edge AWS Deployment Guide](https://help.zscaler.com/zpa/service-edge-deployment-guide-amazon-web-services) for additional prerequisite provisioning steps.
 

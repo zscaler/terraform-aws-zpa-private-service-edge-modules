@@ -27,8 +27,8 @@ variable "instance_key" {
 }
 
 variable "user_data" {
-  type        = string
-  description = "Cloud init data"
+  type        = list(string)
+  description = "Cloud init data (one entry per Service Edge VM). Each VM receives its own user_data so per-instance values like the OAuth SSM parameter name can be injected."
 }
 
 variable "psevm_instance_type" {

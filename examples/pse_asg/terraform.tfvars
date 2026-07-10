@@ -7,8 +7,42 @@
 #####################################################################################################################
 
 #####################################################################################################################
+##### ZPA Provider Resources - Service Edge Onboarding                          #####
+##### This module supports TWO onboarding methods for Private Service Edges:    #####
+#####   - "oauth"            (DEFAULT, recommended): enroll via OAuth2 user codes #####
+#####   - "provisioning_key" (secondary/legacy):     enroll via a provisioning key #####
+#####################################################################################################################
+
+## DEPLOYMENT WORKFLOW (oauth - default):
+##
+## 1. Configure ZPA authentication (environment variables - see below)
+## 2. Run: terraform apply -var-file=terraform.tfvars
+## 3. Module will:
+##    a) Create the SSM parameter namespace and the Auto Scaling Group
+##    b) ASG instances boot and register OAuth tokens to SSM (2-4 minutes)
+##    c) Terraform discovers instances and reads their OAuth tokens
+##    d) Creates the Service Edge Group with tokens
+##    e) Enrolls Private Service Edges via OAuth2 API
+## 4. Done!
+
+## 0. AWS Systems Manager Parameter Store for OAuth Token Storage (oauth method only)
+##    By default, the module uses a generated SSM parameter prefix to store OAuth tokens from ASG instances.
+##    Uncomment to override the SSM parameter prefix (BYO - Bring Your Own).
+
+#byo_ssm_parameter_name                         = "/zpa/oauth-tokens/my-custom-prefix"
+
+## 0a. Service Edge onboarding method. Default is "oauth" (recommended): ASG instances publish their OAuth2 user
+##     codes to AWS SSM Parameter Store and Terraform discovers the instances and reads the codes back to enroll
+##     the Service Edge Group. Set to "provisioning_key" to use the legacy provisioning key flow instead. The
+##     provisioning key is created by the ZPA provider and written into the launch template user_data; no SSM
+##     Parameter Store is used in that mode.
+
+#onboarding_method                              = "provisioning_key"
+
+#####################################################################################################################
 ##### Optional: ZPA Provider Resources. Skip to step 3. if you already have an  #####
 ##### Service Edge Group + Provisioning Key.                                    #####
+##### (Steps 1., 3. and 4. only apply when onboarding_method = "provisioning_key") #####
 #####################################################################################################################
 
 ## 1. ZPA Service Edge Provisioning Key variables. Uncomment and replace values as desired for your deployment.
@@ -24,18 +58,18 @@
 ##    For any questions populating the below values, please reference: 
 ##    https://registry.terraform.io/providers/zscaler/zpa/latest/docs/resources/zpa_service_edge_group
 
-#pse_group_name                     = "new_group_name"
-#pse_group_description              = "group_description"
-#pse_group_enabled                  = true
-#pse_group_country_code             = "US"
-#pse_group_latitude                 = "37.3382082"
-#pse_group_longitude                = "-121.8863286"
-#pse_group_location                 = "San Jose, CA, USA"
-#pse_group_upgrade_day              = "SUNDAY"
-#pse_group_upgrade_time_in_secs     = "66600"
-#pse_group_override_version_profile = true
+#pse_group_name                    = "new_group_name"
+pse_group_description              = "group_description"
+pse_group_enabled                  = true
+pse_group_country_code             = "US"
+pse_group_latitude                 = "37.3382082"
+pse_group_longitude                = "-121.8863286"
+pse_group_location                 = "San Jose, CA, USA"
+pse_group_upgrade_day              = "SUNDAY"
+pse_group_upgrade_time_in_secs     = "66600"
+pse_group_override_version_profile = false
 #pse_group_version_profile_id       = "2"
-#pse_is_public                      = false
+pse_is_public = false
 #zpa_trusted_network_name           = "Corporate-Network (zscalertwo.net)"   ### this variable is optional. leave commented out if not used  
 
 

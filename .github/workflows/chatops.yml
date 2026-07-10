@@ -1,0 +1,147 @@
+# DESCRIPTION:
+#   ChatOps dispatcher. Listens for /validate /plan /apply /idempotence /sca
+#   /help slash commands posted as PR comments and dispatches the matching
+#   workflow_dispatch event on validate-command.yml / plan-command.yml /
+#   apply-command.yml / idempotence-command.yml / sca-command.yml /
+#   help-command.yml.
+#
+# PREREQUISITES (must be configured in repo Settings → Secrets):
+#   - CHATOPS_APP_ID                  GitHub App ID for the dispatcher bot.
+#   - CHATOPS_APP_PRIVATE_KEY         GitHub App private key (PEM).
+#   - CHATOPS_APP_INSTALLATION_ID     Installation ID on this org / repo.
+#
+#   The default GITHUB_TOKEN cannot dispatch workflows, hence the App.
+#
+# PERMISSIONS that the App must have on this repo:
+#   - Actions: read & write    (to dispatch workflows)
+#   - Contents: read           (to read PR head ref)
+#   - Pull requests: write     (to update the comment with status)
+name: ChatOPS dispatcher
+run-name: "ChatOPS bot for PR - (#${{ github.event.issue.number }}) ${{ github.event.issue.title }}"
+
+permissions:
+  contents: read
+
+on:
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: chat-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  dispatch:
+    name: Dispatch a test job
+    if: ${{ github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: get PR head sha
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 #v6
+        id: pr
+        with:
+          result-encoding: string
+          script: |
+            let pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            })
+            console.log(pr.data.head.sha)
+
+            let ac = await github.request('GET /repos/{owner}/{repo}/activity?ref={ref}', {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: pr.data.head.ref,
+              headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+              }
+            })
+            comment_timestamp = context.payload.comment.created_at;
+            comment_date = Date.parse(comment_timestamp);
+            push_sha = ac.data[0].after;
+            push_timestamp = ac.data[0].timestamp;
+            push_date = Date.parse(push_timestamp);
+
+            if (push_sha == pr.data.head.sha) {
+              if (comment_date > push_date) {
+                console.log("Ok: comment after push");
+              } else {
+                console.log("Error: comment before push");
+                process.exit(1);
+              }
+            } else {
+              console.log("Error: commit sha does not match latest commit");
+              process.exit(1);
+            }
+
+            return pr.data.head.sha
+
+      - name: get PR source repository
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 #v6
+        id: src-repo
+        with:
+          result-encoding: string
+          script: |
+            let pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            })
+            console.log(pr.data.head.repo.full_name)
+            return pr.data.head.repo.full_name
+
+      - name: Generate GitHub token
+        id: generate-token
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a #v2
+        with:
+          app_id: ${{ secrets.CHATOPS_APP_ID }}
+          private_key: ${{ secrets.CHATOPS_APP_PRIVATE_KEY }}
+          installation_retrieval_mode: id
+          installation_retrieval_payload: ${{ secrets.CHATOPS_APP_INSTALLATION_ID }}
+
+      - name: "dispatch test command on commitsha: ${{ steps.pr.outputs.result }}"
+        id: scd
+        uses: peter-evans/slash-command-dispatch@f996d7b7aae9059759ac55e978cff76d91853301 #v3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          issue-type: pull-request
+          dispatch-type: workflow
+          permission: maintain
+          commands: |
+            validate
+            plan
+            apply
+            idempotence
+            sca
+            help
+          static-args: |
+            comment-id=${{ github.event.comment.id }}
+            pr-id=${{ github.event.issue.number }}
+            pr-title=${{ github.event.issue.title }}
+            commitsha=${{ steps.pr.outputs.result }}
+            repository=${{ steps.src-repo.outputs.result }}
+
+      - name: Edit comment with error message
+        if: steps.scd.outputs.error-message
+        uses: peter-evans/create-or-update-comment@23ff15729ef2fc348714a3bb66d2f655ca9066f2 #v3
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          body: |
+            > ${{ steps.scd.outputs.error-message }}
+          reactions: "-1"
+          reactions-edit-mode: replace
+
+      - name: Concurency ratio fallback
+        if: cancelled()
+        uses: peter-evans/create-or-update-comment@23ff15729ef2fc348714a3bb66d2f655ca9066f2 #v3
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          body: |
+            > ChatOPS run cancelled.
+            > See [job run log](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+          reactions: "confused"
+          reactions-edit-mode: replace

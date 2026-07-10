@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.94.0"
+      version = "~> 6.54.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -20,9 +20,17 @@ terraform {
       source  = "hashicorp/tls"
       version = "~> 4.0.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.9.0"
+    }
+    external = {
+      source  = "hashicorp/external"
+      version = "~> 2.3.0"
+    }
     zpa = {
       source  = "zscaler/zpa"
-      version = "~> 4.0.0"
+      version = ">= 4.4.0"
     }
   }
 
@@ -32,6 +40,20 @@ terraform {
 # Configure the AWS Provider
 provider "aws" {
   region = var.aws_region
+
+  # Ignore account-managed governance tags so subsequent plans stay idempotent.
+  ignore_tags {
+    keys = [
+      "acctowner",
+      "area",
+      "costcenter",
+      "domain",
+      "envtype",
+      "jiraname",
+      "opsteam",
+      "subarea",
+    ]
+  }
 }
 
 provider "zpa" {
