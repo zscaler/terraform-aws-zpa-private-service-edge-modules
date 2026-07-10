@@ -27,6 +27,7 @@ No modules.
 | [aws_autoscaling_group.pse_asg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/autoscaling_group) | resource |
 | [aws_autoscaling_policy.pse_asg_target_tracking_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/autoscaling_policy) | resource |
 | [aws_launch_template.pse_launch_template](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/launch_template) | resource |
+
 ## Inputs
 
 | Name | Description | Type | Default | Required |

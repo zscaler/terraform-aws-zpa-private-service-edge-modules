@@ -28,6 +28,7 @@ No modules.
 | ---- | ---- |
 | [aws_eip.pse_eip](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip) | resource |
 | [aws_instance.pse_vm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
+
 ## Inputs
 
 | Name | Description | Type | Default | Required |
