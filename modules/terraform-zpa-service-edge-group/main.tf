@@ -42,7 +42,7 @@ resource "zpa_service_edge_group" "service_edge_group" {
   latitude                 = var.pse_group_latitude
   longitude                = var.pse_group_longitude
   location                 = var.pse_group_location
-  version_profile_id       = var.pse_group_version_profile_id
+  version_profile_id       = local.version_profile_id
   override_version_profile = var.pse_group_override_version_profile
   enabled                  = var.pse_group_enabled
   country_code             = var.pse_group_country_code

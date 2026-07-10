@@ -52,12 +52,6 @@ variable "tls_key_algorithm" {
   default     = "RSA"
 }
 
-variable "pse_count" {
-  type        = number
-  description = "Default number of Service Edge appliances to create"
-  default     = 2
-}
-
 variable "psevm_instance_type" {
   type        = string
   description = "Service Edge Instance Type"
@@ -72,18 +66,6 @@ variable "psevm_instance_type" {
     )
     error_message = "Input psevm_instance_type must be set to an approved vm instance type."
   }
-}
-
-variable "reuse_security_group" {
-  type        = bool
-  description = "Specifies whether the SG module should create 1:1 security groups per instance or 1 security group for all instances"
-  default     = false
-}
-
-variable "reuse_iam" {
-  type        = bool
-  description = "Specifies whether the SG module should create 1:1 IAM per instance or 1 IAM for all instances"
-  default     = false
 }
 
 variable "associate_public_ip_address" {
