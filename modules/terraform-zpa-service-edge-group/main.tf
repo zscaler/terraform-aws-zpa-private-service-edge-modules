@@ -49,6 +49,7 @@ resource "zpa_service_edge_group" "service_edge_group" {
   override_version_profile = var.pse_group_override_version_profile
   enabled                  = var.pse_group_enabled
   country_code             = var.pse_group_country_code
+  city_country             = var.pse_group_city_country
   is_public                = var.pse_is_public
   user_codes               = var.user_codes
 

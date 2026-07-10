@@ -21,6 +21,12 @@ variable "pse_group_country_code" {
   default     = ""
 }
 
+variable "pse_group_city_country" {
+  type        = string
+  description = "Optional: City and country of this Private Service Edge Group. example 'San Jose, US'"
+  default     = ""
+}
+
 variable "pse_group_latitude" {
   type        = string
   description = "Latitude of the Private Service Edge Group. Integer or decimal. With values in the range of -90 to 90"

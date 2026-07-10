@@ -108,6 +108,7 @@ module "zpa_service_edge_group_pk" {
   pse_group_description              = "${var.pse_group_description}-${var.aws_region}-${module.network.vpc_id}"
   pse_group_enabled                  = var.pse_group_enabled
   pse_group_country_code             = var.pse_group_country_code
+  pse_group_city_country             = var.pse_group_city_country
   pse_group_latitude                 = var.pse_group_latitude
   pse_group_longitude                = var.pse_group_longitude
   pse_group_location                 = var.pse_group_location
@@ -328,6 +329,7 @@ module "zpa_service_edge_group" {
   pse_group_description              = "${var.pse_group_description}-${var.aws_region}-${module.network.vpc_id}"
   pse_group_enabled                  = var.pse_group_enabled
   pse_group_country_code             = var.pse_group_country_code
+  pse_group_city_country             = var.pse_group_city_country
   pse_group_latitude                 = var.pse_group_latitude
   pse_group_longitude                = var.pse_group_longitude
   pse_group_location                 = var.pse_group_location

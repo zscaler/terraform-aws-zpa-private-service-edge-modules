@@ -32,6 +32,7 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
+| <a name="input_pse_group_city_country"></a> [pse\_group\_city\_country](#input\_pse\_group\_city\_country) | Optional: City and country of this Private Service Edge Group. example 'San Jose, US' | `string` | `""` | no |
 | <a name="input_pse_group_country_code"></a> [pse\_group\_country\_code](#input\_pse\_group\_country\_code) | Optional: Country code of this Private Service Edge Group. example 'US' | `string` | `""` | no |
 | <a name="input_pse_group_description"></a> [pse\_group\_description](#input\_pse\_group\_description) | Optional: Description of the Private Service Edge Group | `string` | `""` | no |
 | <a name="input_pse_group_enabled"></a> [pse\_group\_enabled](#input\_pse\_group\_enabled) | Whether this Private Service Edge Group is enabled or not | `bool` | `true` | no |
