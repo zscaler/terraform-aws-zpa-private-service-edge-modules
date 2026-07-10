@@ -11,6 +11,17 @@ resource "aws_instance" "pse_vm" {
   key_name               = var.instance_key
   user_data_base64       = base64encode(element(var.user_data, count.index))
 
+  ebs_optimized = true
+
+  root_block_device {
+    delete_on_termination = true
+    encrypted             = var.encrypted_ebs_enabled
+    volume_type           = var.ebs_volume_type
+    tags = merge(var.global_tags,
+      { Name = "${var.name_prefix}-pse-vm-${count.index + 1}-ebs-${var.resource_tag}" }
+    )
+  }
+
   metadata_options {
     http_endpoint = "enabled"
     http_tokens   = var.imdsv2_enabled ? "required" : "optional"
@@ -19,6 +30,12 @@ resource "aws_instance" "pse_vm" {
   tags = merge(var.global_tags,
     { Name = "${var.name_prefix}-pse-vm-${count.index + 1}-${var.resource_tag}" }
   )
+
+  lifecycle {
+    ignore_changes = [
+      root_block_device[0].kms_key_id
+    ]
+  }
 }
 
 

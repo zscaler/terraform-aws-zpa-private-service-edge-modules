@@ -28,4 +28,22 @@ terraform {
 # Configure the AWS Provider
 provider "aws" {
   region = var.aws_region
+
+  # Some AWS accounts enforce Organization tag policies that automatically
+  # attach governance tags (cost center, owner, environment, etc.) to created
+  # resources. Terraform does not manage these tags, so without ignore_tags it
+  # detects them as drift on subsequent plans and the apply is non-idempotent.
+  # Ignoring these account-managed tag keys keeps plans clean.
+  ignore_tags {
+    keys = [
+      "acctowner",
+      "area",
+      "costcenter",
+      "domain",
+      "envtype",
+      "jiraname",
+      "opsteam",
+      "subarea",
+    ]
+  }
 }
