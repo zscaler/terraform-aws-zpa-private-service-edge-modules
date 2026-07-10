@@ -20,11 +20,14 @@ data "zpa_customer_version_profile" "default" {
 }
 
 locals {
-  # The ZPA API requires version_profile_id to be "0" whenever the version
-  # profile is NOT overridden. When it IS overridden, honor an explicit caller
-  # value, otherwise fall back to the resolved "Default" profile id.
+  # version_profile_id is Optional+Computed on zpa_service_edge_group. When the
+  # version profile is NOT overridden, the API manages this value itself (it
+  # returns "2"/New Release), so send null and let Terraform keep the computed
+  # value. Pinning "0" here produces a perpetual "2" -> "0" idempotence diff.
+  # When it IS overridden, honor an explicit caller value, otherwise fall back
+  # to the resolved "Default" profile id.
   version_profile_id = (
-    var.pse_group_override_version_profile == false ? "0" :
+    var.pse_group_override_version_profile == false ? null :
     var.pse_group_version_profile_id != "" ? var.pse_group_version_profile_id :
     data.zpa_customer_version_profile.default[0].id
   )
